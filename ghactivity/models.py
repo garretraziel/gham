@@ -1,0 +1,77 @@
+from django.db import models
+from django.conf import settings
+from urlparse import urljoin
+
+
+class Repository(models.Model):
+    repository_id = models.IntegerField()
+    owner = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    fork = models.ForeignKey('self')
+    first_commit = models.DateField()
+    last_commit = models.DateField()
+
+    def _get_full_name(self):
+        return "%s/%s" % (self.owner, self.name)
+    full_name = property(_get_full_name)
+
+    def _get_github_url(self):
+        return urljoin(settings.GITHUB_URL, self.full_name)
+    github_url = property(_get_github_url)
+
+    def _get_github_api_url(self):
+        return urljoin(settings.GITHUB_API_URL + "/repos", self.full_name)
+    github_api_url = property(_get_github_api_url)
+
+    def __unicode__(self):
+        return "Repository %s" % self.full_name
+
+
+class CommitCount(models.Model):
+    count = models.IntegerField()
+    date = models.DateField()
+    repository = models.ForeignKey(Repository)
+
+
+class IssuesCount(models.Model):
+    issues_count = models.IntegerField()
+    closed_count = models.IntegerField()
+    date = models.DateField()
+    repository = models.ForeignKey(Repository)
+
+
+class IssuesTime(models.Model):
+    issues_time = models.FloatField()
+    date = models.DateField()
+    repository = models.ForeignKey(Repository)
+
+
+class CommentCount(models.Model):
+    count = models.IntegerField()
+    date = models.DateField()
+    repository = models.ForeignKey(Repository)
+
+
+class PullsCount(models.Model):
+    pulls_count = models.IntegerField()
+    closed_count = models.IntegerField()
+    date = models.DateField()
+    repository = models.ForeignKey(Repository)
+
+
+class ClosedPullsTime(models.Model):
+    time_to_close = models.FloatField()
+    date = models.DateField()
+    repository = models.ForeignKey(Repository)
+
+
+class ContribCount(models.Model):
+    count = models.IntegerField()
+    date = models.DateField()
+    repository = models.ForeignKey(Repository)
+
+
+class ForksCount(models.Model):
+    count = models.IntegerField()
+    date = models.DateField()
+    repository = models.ForeignKey(Repository)
