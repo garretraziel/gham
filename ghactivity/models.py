@@ -4,10 +4,10 @@ from urlparse import urljoin
 
 
 class Repository(models.Model):
-    repository_id = models.IntegerField()
+    repository_id = models.IntegerField(primary_key=True)
     owner = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
-    fork = models.ForeignKey('self')
+    fork = models.ForeignKey('self', null=True, blank=True)
     first_commit = models.DateField()
     last_commit = models.DateField()
 
@@ -26,6 +26,10 @@ class Repository(models.Model):
     def __unicode__(self):
         return "Repository %s" % self.full_name
 
+    class Meta:
+        ordering = ['-repository_id']
+        verbose_name_plural = "repositories"
+
 
 class CommitCount(models.Model):
     count = models.IntegerField()
@@ -42,12 +46,6 @@ class IssuesCount(models.Model):
 
 class IssuesTime(models.Model):
     issues_time = models.FloatField()
-    date = models.DateField()
-    repository = models.ForeignKey(Repository)
-
-
-class CommentCount(models.Model):
-    count = models.IntegerField()
     date = models.DateField()
     repository = models.ForeignKey(Repository)
 

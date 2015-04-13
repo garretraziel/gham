@@ -1,6 +1,7 @@
 from django.conf.urls import url
-from . import views
+from .views import get_repo_info, RepositoryDetail
 
 urlpatterns = [
-    url(r'^(?P<owner>[A-Za-z0-9_.-]+)/(?P<name>[A-Za-z0-9_.-]+)$', views.get_repo_info, name="get_repo_info"),
+    url(r'^$', get_repo_info, name="get_repo_info"),
+    url(r'^(?P<pk>\d+)$', RepositoryDetail.as_view(), name="repo_detail"),
 ]
