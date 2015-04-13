@@ -1,11 +1,10 @@
 from django.shortcuts import render_to_response
 from django.views.generic import DetailView
 from django.template.context_processors import csrf
-from django.core.urlresolvers import reverse
+from django.shortcuts import redirect
+from django.http import Http404
 
 import github
-from github import GitHub
-
 from ghaminer import ghaminer as gm
 from datetime import date, datetime
 
@@ -22,11 +21,11 @@ def get_repo_info(request):
             full_name = request.POST['repository']
             owner, name = full_name.split("/", 1)
 
-            if len(Repository.objects.filter(owner=owner).filter(name=name)) == 0:
+            if len(Repository.objects.filter(owner=owner).filter(name=name)) != 0:
                 r = Repository.objects.filter(owner=owner).filter(name=name).get()
-                return reverse("repo_detail", kwargs={"pk": r.id})
+                return redirect("repo_detail", pk=r.id)
 
-            gh = GitHub()  # TODO: login
+            gh = github.GitHub()  # TODO: login
             today = date.today()
             now = datetime.now()
 
@@ -35,10 +34,12 @@ def get_repo_info(request):
             forks = gm.get_all_forks(gh, owner, name)
 
             commits.sort(key=gm.get_commit_date)
+            issues.sort(key=gm.get_direct_date)
+            forks.sort(key=gm.get_direct_date)
 
             #return render_to_response("ghactivity/")
         except github.ApiError:
-            pass  # TODO
+            raise Http404("No such repo exists.")
 
 
 class RepositoryDetail(DetailView):
