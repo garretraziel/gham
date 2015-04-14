@@ -1,3 +1,13 @@
 from django.contrib import admin
+from .models import Repository, CommitCount
 
-# Register your models here.
+
+class CommitCountInline(admin.TabularInline):
+    model = CommitCount
+
+
+class RepositoryAdmin(admin.ModelAdmin):
+    inlines = [
+        CommitCountInline,
+    ]
+admin.site.register(Repository, RepositoryAdmin)

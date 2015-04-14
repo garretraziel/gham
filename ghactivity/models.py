@@ -7,7 +7,7 @@ class Repository(models.Model):
     repository_id = models.IntegerField(primary_key=True)
     owner = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
-    fork = models.ForeignKey('self', null=True, blank=True)
+    fork = models.CharField(max_length=500, null=True, blank=True)
     first_commit = models.DateField()
     last_commit = models.DateField()
 
@@ -19,12 +19,8 @@ class Repository(models.Model):
         return urljoin(settings.GITHUB_URL, self.full_name)
     github_url = property(_get_github_url)
 
-    def _get_github_api_url(self):
-        return urljoin(settings.GITHUB_API_URL + "/repos", self.full_name)
-    github_api_url = property(_get_github_api_url)
-
     def __unicode__(self):
-        return "Repository %s" % self.full_name
+        return self.full_name
 
     class Meta:
         ordering = ['-repository_id']

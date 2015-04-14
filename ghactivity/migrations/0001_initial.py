@@ -11,26 +11,10 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='ClosedPullsCount',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('count', models.IntegerField()),
-                ('date', models.DateField()),
-            ],
-        ),
-        migrations.CreateModel(
             name='ClosedPullsTime',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('time_to_close', models.FloatField()),
-                ('date', models.DateField()),
-            ],
-        ),
-        migrations.CreateModel(
-            name='CommentCount',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('count', models.IntegerField()),
                 ('date', models.DateField()),
             ],
         ),
@@ -79,21 +63,29 @@ class Migration(migrations.Migration):
             name='PullsCount',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('count', models.IntegerField()),
+                ('pulls_count', models.IntegerField()),
+                ('closed_count', models.IntegerField()),
                 ('date', models.DateField()),
             ],
         ),
         migrations.CreateModel(
             name='Repository',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('repository_id', models.IntegerField()),
+                ('repository_id', models.IntegerField(serialize=False, primary_key=True)),
                 ('owner', models.CharField(max_length=255)),
                 ('name', models.CharField(max_length=255)),
+                ('fork', models.CharField(max_length=500, null=True, blank=True)),
                 ('first_commit', models.DateField()),
                 ('last_commit', models.DateField()),
-                ('fork', models.ForeignKey(to='ghactivity.Repository')),
             ],
+            options={
+                'ordering': ['-repository_id'],
+                'verbose_name_plural': 'repositories',
+            },
+        ),
+        migrations.AlterUniqueTogether(
+            name='repository',
+            unique_together=set([('owner', 'name')]),
         ),
         migrations.AddField(
             model_name='pullscount',
@@ -126,17 +118,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(to='ghactivity.Repository'),
         ),
         migrations.AddField(
-            model_name='commentcount',
-            name='repository',
-            field=models.ForeignKey(to='ghactivity.Repository'),
-        ),
-        migrations.AddField(
             model_name='closedpullstime',
-            name='repository',
-            field=models.ForeignKey(to='ghactivity.Repository'),
-        ),
-        migrations.AddField(
-            model_name='closedpullscount',
             name='repository',
             field=models.ForeignKey(to='ghactivity.Repository'),
         ),

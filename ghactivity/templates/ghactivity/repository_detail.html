@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
 {% block body %}
-    {{ repository.name }}
+    {{ repository.full_name }}<br/>
+    Fork: {{ repository.fork }}<br/>
+    First commit: {{ repository.first_commit }}<br/>
+    Last commit: {{ repository.last_commit }}<br/>
+    {% for commit_count in repository.commitcount_set.all %}
+        {{ commit_count.date }}: {{ commit_count.count }}<br/>
+    {% endfor %}
 {% endblock %}

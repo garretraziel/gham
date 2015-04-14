@@ -103,4 +103,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 GITHUB_URL = "https://www.github.com"
-GITHUB_API_URL = "https://api.github.com"
+GITHUB_USERNAME = os.environ.get("GH_USERNAME")
+GITHUB_PASSWORD = os.environ.get("GH_PASSWORD")
