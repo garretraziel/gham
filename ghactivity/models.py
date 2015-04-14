@@ -29,6 +29,7 @@ class Repository(models.Model):
     class Meta:
         ordering = ['-repository_id']
         verbose_name_plural = "repositories"
+        unique_together = (('owner', 'name'),)
 
 
 class CommitCount(models.Model):

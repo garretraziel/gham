@@ -21,7 +21,7 @@ def get_repo_info(request):
             full_name = request.POST['repository']
             owner, name = full_name.split("/", 1)
 
-            if len(Repository.objects.filter(owner=owner).filter(name=name)) != 0:
+            if Repository.objects.filter(owner=owner).filter(name=name).count() != 0:
                 r = Repository.objects.filter(owner=owner).filter(name=name).get()
                 return redirect("repo_detail", pk=r.id)
 
@@ -38,7 +38,7 @@ def get_repo_info(request):
             forks.sort(key=gm.get_direct_date)
 
             #return render_to_response("ghactivity/")
-        except github.ApiError:
+        except github.ApiNotFoundError:
             raise Http404("No such repo exists.")
 
 
