@@ -102,9 +102,5 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-TEMPLATE_DIRS = (
-    os.path.join(BASE_DIR,  'templates'),
-)
-
 GITHUB_URL = "https://www.github.com"
 GITHUB_API_URL = "https://api.github.com"
