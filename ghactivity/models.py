@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import RegexValidator
 from urlparse import urljoin
 
 
@@ -10,6 +11,9 @@ class Repository(models.Model):
     fork = models.CharField(max_length=500, null=True, blank=True)
     first_commit = models.DateField()
     last_commit = models.DateField()
+    prediction_string = models.TextField(validators=[
+        RegexValidator(regex=r'([^,]+(,|$)){89}')
+    ])
 
     def _get_full_name(self):
         return "%s/%s" % (self.owner, self.name)

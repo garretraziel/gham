@@ -5,6 +5,8 @@
     Fork: {{ repository.fork }}<br/>
     First commit: {{ repository.first_commit }}<br/>
     Last commit: {{ repository.last_commit }}<br/>
+    Prediction string: {{ repository.prediction_string }}<br/>
+    Prediction: {{ prediction }}<br/>
     {% for commit_count in repository.commitcount_set.all %}
         {{ commit_count.date }}: {{ commit_count.count }}<br/>
     {% endfor %}

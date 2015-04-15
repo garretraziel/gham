@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import django.core.validators
 
 
 class Migration(migrations.Migration):
@@ -77,6 +78,7 @@ class Migration(migrations.Migration):
                 ('fork', models.CharField(max_length=500, null=True, blank=True)),
                 ('first_commit', models.DateField()),
                 ('last_commit', models.DateField()),
+                ('prediction_string', models.TextField(validators=[django.core.validators.RegexValidator(regex=b'([^,]+(,|$)){89}')])),
             ],
             options={
                 'ordering': ['-repository_id'],

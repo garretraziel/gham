@@ -4,7 +4,7 @@ from django.views.generic.base import RedirectView
 from django.core.urlresolvers import reverse_lazy
 
 urlpatterns = [
-    url(r'^$', RedirectView.as_view(url=reverse_lazy('get_repo_info'))),
+    url(r'^$', RedirectView.as_view(url=reverse_lazy('get_repo_info'), permanent=True)),
     url(r'^activity/', include('ghactivity.urls')),
 
     url(r'^admin/', include(admin.site.urls)),
