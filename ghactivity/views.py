@@ -94,28 +94,9 @@ def get_repo_info(request):
 class RepositoryDetail(DetailView):
     model = Repository
 
-    predict_names = ["commits_count", "commits_f_1w", "commits_f_1m", "commits_f_6m", "commits_f_1y", "commits_f_all",
-                     "issues_count", "issues_f_1w", "issues_f_1m", "issues_f_6m", "issues_f_1y", "issues_f_all",
-                     "closed_issues_count", "closed_issues_f_1w", "closed_issues_f_1m", "closed_issues_f_6m",
-                     "closed_issues_f_1y", "closed_issues_f_all", "closed_issues_time_1w", "closed_issues_time_1m",
-                     "closed_issues_time_6m", "closed_issues_time_1y", "closed_issues_time_all", "comments_count",
-                     "comments_f_1w", "comments_f_1m", "comments_f_6m", "comments_f_1y", "comments_f_all",
-                     "pulls_count", "pulls_f_1w", "pulls_f_1m", "pulls_f_6m", "pulls_f_1y", "pulls_f_all",
-                     "closed_pulls_count", "closed_pulls_f_1w", "closed_pulls_f_1m", "closed_pulls_f_6m",
-                     "closed_pulls_f_1y", "closed_pulls_f_all", "closed_pulls_time_1w", "closed_pulls_time_1m",
-                     "closed_pulls_time_6m", "closed_pulls_time_1y", "closed_pulls_time_all", "pulls_comments_count",
-                     "pulls_comments_f_1w", "pulls_comments_f_1m", "pulls_comments_f_6m", "pulls_comments_f_1y",
-                     "pulls_comments_f_all", "events_count", "events_f_1w", "events_f_1m", "events_f_6m", "events_f_1y",
-                     "events_f_all", "contrib_count", "contrib_others", "contrib_p25_1w", "contrib_p50_1w",
-                     "contrib_p75_1w", "contrib_p25_1m", "contrib_p50_1m", "contrib_p75_1m", "contrib_p25_6m",
-                     "contrib_p50_6m", "contrib_p75_6m", "contrib_p25_1y", "contrib_p50_1y", "contrib_p75_1y",
-                     "contrib_p25_all", "contrib_p50_all", "contrib_p75_all", "ccomments_count", "ccomments_f_1w",
-                     "ccomments_f_1m", "ccomments_f_6m", "ccomments_f_1y", "ccomments_f_all", "forks_count",
-                     "forks_f_1w", "forks_f_1m", "forks_f_6m", "forks_f_1y", "forks_f_all", "days_active", "fork"]
-
     @classmethod
     def load_clf(cls, filename):
-        csv = pd.read_csv(filename, na_values=["?"])
+        csv = pd.read_csv(filename, na_values=["nan"])
         X_csv = csv.iloc[:, :-1].copy()
         y_csv = csv['result'].copy()
 
@@ -131,8 +112,7 @@ class RepositoryDetail(DetailView):
         context = super(RepositoryDetail, self).get_context_data(**kwargs)
         pred_str = context['repository'].prediction_string
         f = StringIO(pred_str)
-        csv = pd.read_csv(f, names=self.predict_names, header=None)
-        csv = csv.replace(-1, pd.np.NaN)
+        csv = pd.read_csv(f, names=gm.ATTRS, header=None, na_values=["nan"])
         X = self.v.transform(csv.transpose().to_dict().values())
         X = self.i.transform(X)
         context['prediction'] = self.clf.predict(X)
