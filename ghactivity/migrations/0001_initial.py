@@ -12,15 +12,14 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='ClosedPullsTime',
+            name='Author',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('time_to_close', models.FloatField()),
-                ('date', models.DateField()),
+                ('name', models.CharField(unique=True, max_length=255)),
             ],
         ),
         migrations.CreateModel(
-            name='CommitCount',
+            name='ClosedIssuesCount',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('count', models.IntegerField()),
@@ -28,7 +27,31 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='ContribCount',
+            name='ClosedIssuesTime',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('avg', models.FloatField()),
+                ('date', models.DateField()),
+            ],
+        ),
+        migrations.CreateModel(
+            name='ClosedPullsCount',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('count', models.IntegerField()),
+                ('date', models.DateField()),
+            ],
+        ),
+        migrations.CreateModel(
+            name='ClosedPullsTime',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('avg', models.FloatField()),
+                ('date', models.DateField()),
+            ],
+        ),
+        migrations.CreateModel(
+            name='CommitCount',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('count', models.IntegerField()),
@@ -47,16 +70,7 @@ class Migration(migrations.Migration):
             name='IssuesCount',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('issues_count', models.IntegerField()),
-                ('closed_count', models.IntegerField()),
-                ('date', models.DateField()),
-            ],
-        ),
-        migrations.CreateModel(
-            name='IssuesTime',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('issues_time', models.FloatField()),
+                ('count', models.IntegerField()),
                 ('date', models.DateField()),
             ],
         ),
@@ -64,8 +78,7 @@ class Migration(migrations.Migration):
             name='PullsCount',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('pulls_count', models.IntegerField()),
-                ('closed_count', models.IntegerField()),
+                ('count', models.IntegerField()),
                 ('date', models.DateField()),
             ],
         ),
@@ -73,29 +86,22 @@ class Migration(migrations.Migration):
             name='Repository',
             fields=[
                 ('repository_id', models.IntegerField(serialize=False, primary_key=True)),
-                ('owner', models.CharField(max_length=255)),
                 ('name', models.CharField(max_length=255)),
                 ('fork', models.CharField(max_length=500, null=True, blank=True)),
                 ('first_commit', models.DateField()),
                 ('last_commit', models.DateField()),
+                ('contributors', models.IntegerField()),
+                ('fresh', models.BooleanField(default=False)),
                 ('prediction_string', models.TextField(validators=[django.core.validators.RegexValidator(regex=b'([^,]+(,|$)){89}')])),
+                ('owner', models.ForeignKey(to='ghactivity.Author')),
             ],
             options={
                 'ordering': ['-repository_id'],
                 'verbose_name_plural': 'repositories',
             },
         ),
-        migrations.AlterUniqueTogether(
-            name='repository',
-            unique_together=set([('owner', 'name')]),
-        ),
         migrations.AddField(
             model_name='pullscount',
-            name='repository',
-            field=models.ForeignKey(to='ghactivity.Repository'),
-        ),
-        migrations.AddField(
-            model_name='issuestime',
             name='repository',
             field=models.ForeignKey(to='ghactivity.Repository'),
         ),
@@ -110,11 +116,6 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(to='ghactivity.Repository'),
         ),
         migrations.AddField(
-            model_name='contribcount',
-            name='repository',
-            field=models.ForeignKey(to='ghactivity.Repository'),
-        ),
-        migrations.AddField(
             model_name='commitcount',
             name='repository',
             field=models.ForeignKey(to='ghactivity.Repository'),
@@ -123,5 +124,24 @@ class Migration(migrations.Migration):
             model_name='closedpullstime',
             name='repository',
             field=models.ForeignKey(to='ghactivity.Repository'),
+        ),
+        migrations.AddField(
+            model_name='closedpullscount',
+            name='repository',
+            field=models.ForeignKey(to='ghactivity.Repository'),
+        ),
+        migrations.AddField(
+            model_name='closedissuestime',
+            name='repository',
+            field=models.ForeignKey(to='ghactivity.Repository'),
+        ),
+        migrations.AddField(
+            model_name='closedissuescount',
+            name='repository',
+            field=models.ForeignKey(to='ghactivity.Repository'),
+        ),
+        migrations.AlterUniqueTogether(
+            name='repository',
+            unique_together=set([('owner', 'name')]),
         ),
     ]

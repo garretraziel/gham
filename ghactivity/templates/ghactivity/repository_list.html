@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <ul>
+    {% for repository in repository_list %}
+        {% if repository.fresh %}
+            <li><a href="{{ repository.get_absolute_url }}">{{ repository.name }}</a></li>
+        {% else %}
+            <li>{{ repository.name }}</li>
+        {% endif %}
+    {% endfor %}
+    </ul>
+{% endblock %}

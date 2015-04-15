@@ -1,11 +1,11 @@
 from django.conf.urls import url
-from .views import get_repo_info, RepositoryDetail
-import os
+from django.conf import settings
+from .views import get_repo_info, RepositoryDetail, RepositoryListView
 
-this_dir = os.path.dirname(os.path.realpath(__file__))
-RepositoryDetail.load_clf(os.path.join(this_dir, "datasets/fin_percentage.csv"))
+RepositoryDetail.load_clf(settings.DATASET_NAME)
 
 urlpatterns = [
     url(r'^$', get_repo_info, name="get_repo_info"),
+    url(r'list/$', RepositoryListView.as_view(), name="repo_list"),
     url(r'^(?P<pk>\d+)$', RepositoryDetail.as_view(), name="repo_detail"),
 ]
