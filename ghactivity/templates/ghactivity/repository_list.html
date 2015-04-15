@@ -2,12 +2,17 @@
 
 {% block body %}
     <ul>
-    {% for repository in repository_list %}
-        {% if repository.fresh %}
-            <li><a href="{{ repository.get_absolute_url }}">{{ repository.name }}</a></li>
-        {% else %}
-            <li>{{ repository.name }}</li>
-        {% endif %}
-    {% endfor %}
+        {% for repository in repository_list %}
+            {% if repository.fresh %}
+                <li id="{{ repository.id_name }}"><a
+                        href="{{ repository.get_absolute_url }}">{{ repository.full_name }}</a></li>
+            {% else %}
+                <li id="{{ repository.id_name }}">{{ repository.full_name }}</li>
+            {% endif %}
+        {% endfor %}
     </ul>
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/repo_list.js"></script>
 {% endblock %}

@@ -4,6 +4,7 @@ from django.template.context_processors import csrf
 from django.shortcuts import redirect
 from django.http import Http404
 from django.conf import settings
+from django.http import JsonResponse
 
 from datetime import date
 import github
@@ -195,3 +196,14 @@ class RepositoryDetail(DetailView):
 
 class RepositoryListView(ListView):
     model = Repository
+
+
+def status_json(request):
+    resp = {}
+    values = []
+    repos = Repository.objects.all()
+    for repo in repos:
+        values.append({"name": repo.full_name, "status": repo.fresh, "url": repo.get_absolute_url(),
+                       "id": repo.id_name})
+    resp["val"] = values
+    return JsonResponse(resp, safe=False)

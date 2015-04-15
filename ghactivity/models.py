@@ -29,6 +29,10 @@ class Repository(models.Model):
         return "%s/%s" % (self.owner, self.name)
     full_name = property(_get_full_name)
 
+    def _get_id_name(self):
+        return "%s_%s" % (self.owner, self.name)
+    id_name = property(_get_id_name)
+
     def _get_github_url(self):
         return urljoin(settings.GITHUB_URL, self.full_name)
     github_url = property(_get_github_url)
