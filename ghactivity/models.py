@@ -55,11 +55,27 @@ class CommitCount(models.Model):
     date = models.DateField()
     repository = models.ForeignKey(Repository)
 
+    def __unicode__(self):
+        return "%s for %s" % (self.repository.full_name, self.date.isoformat())
+
+    class Meta:
+        ordering = ['date']
+        verbose_name_plural = "commit counts"
+        unique_together = (('date', 'repository'),)
+
 
 class IssuesCount(models.Model):
     count = models.IntegerField()
     date = models.DateField()
     repository = models.ForeignKey(Repository)
+
+    def __unicode__(self):
+        return "%s for %s" % (self.repository.full_name, self.date.isoformat())
+
+    class Meta:
+        ordering = ['date']
+        verbose_name_plural = "issues counts"
+        unique_together = (('date', 'repository'),)
 
 
 class ClosedIssuesCount(models.Model):
@@ -69,7 +85,7 @@ class ClosedIssuesCount(models.Model):
 
 
 class ClosedIssuesTime(models.Model):
-    avg = models.FloatField()
+    count = models.FloatField()
     date = models.DateField()
     repository = models.ForeignKey(Repository)
 
@@ -87,7 +103,7 @@ class ClosedPullsCount(models.Model):
 
 
 class ClosedPullsTime(models.Model):
-    avg = models.FloatField()
+    count = models.FloatField()
     date = models.DateField()
     repository = models.ForeignKey(Repository)
 

@@ -18,6 +18,7 @@ from sklearn.pipeline import Pipeline
 import pandas as pd
 from StringIO import StringIO
 import threading
+import json
 
 from .models import Repository, Author, CommitCount, IssuesCount, ClosedIssuesCount, ClosedIssuesTime, PullsCount, \
     ClosedPullsCount, ClosedPullsTime, ForksCount
@@ -48,12 +49,12 @@ def _create_average_series(values, get_date, get_value, obj, repository):
                 s += get_value(value)
             else:
                 avg = s / count
-                obj.objects.create(avg=avg, date=t_date, repository=repository)
+                obj.objects.create(count=avg, date=t_date, repository=repository)
                 t_date = get_date(value)
                 count = 1
                 s = 0.0
         avg = s / count
-        obj.objects.create(avg=avg, date=t_date, repository=repository)
+        obj.objects.create(count=avg, date=t_date, repository=repository)
 
 
 def _download_repo_info(owner, name, fork, repository):
@@ -190,7 +191,53 @@ class RepositoryDetail(DetailView):
         f = StringIO(pred_str)
         csv = pd.read_csv(f, names=gm.ATTRS, header=None, na_values=["nan", "?"])
         X = csv.transpose().to_dict().values()
-        context['prediction'] = self.pipeline.predict(X)
+        context['prediction'] = self.pipeline.predict(X)[0]
+        commits = context['object'].commitcount_set.all()
+        if len(commits) != 0:
+            first_day = commits[0].date
+            commits_json = [
+                {
+                    "count": commit.count,
+                    "date": commit.date.isoformat(),
+                    "distance": (commit.date - first_day).days
+                } for commit in commits
+            ]
+        else:
+            commits_json = []
+        issues = context['object'].issuescount_set.all()
+        closedissues = context['object'].closedissuescount_set.all()
+        closedissuestime = context['object'].closedissuestime_set.all()
+        if len(issues) != 0:
+            first_day = issues[0].date
+            issues_json = [
+                {
+                    "count": issue.count,
+                    "date": issue.date.isoformat(),
+                    "distance": (issue.date - first_day).days
+                } for issue in issues
+            ]
+            closedissues_json = [
+                {
+                    "count": closedissue.count,
+                    "date": closedissue.date.isoformat(),
+                    "distance": (closedissue.date - first_day).days
+                } for closedissue in closedissues
+            ]
+            closedissuestime_json = [
+                {
+                    "count": closedissuetime.count,
+                    "date": closedissuetime.date.isoformat(),
+                    "distance": (closedissuetime.date - first_day).days
+                } for closedissuetime in closedissuestime
+            ]
+        else:
+            issues_json = []
+            closedissues_json = []
+            closedissuestime_json = []
+        context['commits'] = json.dumps(commits_json)
+        context['issues'] = json.dumps(issues_json)
+        context['closedissues'] = json.dumps(closedissues_json)
+        context['closedissuestime'] = json.dumps(closedissuestime_json)
         return context
 
 

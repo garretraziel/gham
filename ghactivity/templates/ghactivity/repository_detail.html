@@ -7,7 +7,15 @@
     Last commit: {{ repository.last_commit }}<br/>
     Prediction string: {{ repository.prediction_string }}<br/>
     Prediction: {{ prediction }}<br/>
-    {% for commit_count in repository.commitcount_set.all %}
-        {{ commit_count.date }}: {{ commit_count.count }}<br/>
-    {% endfor %}
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        var commits = {{ commits | safe }};
+        var issues = {{ issues | safe }};
+        var closedissues = {{ closedissues | safe }};
+        var closedissuestime = {{ closedissuestime | safe }};
+    </script>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/static/render_stats.js"></script>
 {% endblock %}
