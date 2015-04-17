@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 
 {% block body %}
-    {{ repository.full_name }}<br/>
-    Fork: {{ repository.fork }}<br/>
-    First commit: {{ repository.first_commit }}<br/>
-    Last commit: {{ repository.last_commit }}<br/>
-    Prediction string: {{ repository.prediction_string }}<br/>
-    Prediction: {{ prediction }}<br/>
+    <table>
+        <tr>{{ repository.full_name }}</tr>
+        <tr><td>Fork:</td><td>{{ repository.fork }}</td></tr>
+        <tr><td>First commit:</td><td>{{ repository.first_commit }}</td></tr>
+        <tr><td>Last commit:</td><td>{{ repository.last_commit }}</td></tr>
+        <tr><td>Named contributors:</td><td>{{ repository.contributors }}</td></tr>
+        <tr><td>Prediction:</td><td>{{ prediction }}</td></tr>
+    </table>
 {% endblock %}
 
 {% block scripts %}
@@ -15,6 +17,10 @@
         var issues = {{ issues | safe }};
         var closedissues = {{ closedissues | safe }};
         var closedissuestime = {{ closedissuestime | safe }};
+        var pulls = {{ pulls | safe }};
+        var closedpulls = {{ closedpulls | safe }};
+        var closedpullstime = {{ closedpullstime | safe }};
+        var forks = {{ forks | safe }};
     </script>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script src="/static/render_stats.js"></script>

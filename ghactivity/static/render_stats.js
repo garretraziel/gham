@@ -69,3 +69,35 @@ svg = d3.select("body").append("svg");
 renderValues(svg, "blue", issues, x_scale, y_scale);
 renderValues(svg, "yellow", closedissues, x_scale, y_scale);
 renderValues(svg, "red", closedissuestime, x_scale);
+
+max_date_i = pulls[pulls.length - 1].distance;
+max_date_ci = closedpulls[closedpulls.length - 1].distance;
+max_date_ct = closedpullstime[closedpullstime.length - 1].distance;
+max_date = Math.max(max_date_i, max_date_ci, max_date_ct);
+
+max_count = 0;
+for (i = 0; i < pulls.length; i++) {
+    if (pulls[i].count > max_count) {
+        max_count = pulls[i].count;
+    }
+}
+for (i = 0; i < closedpulls.length; i++) {
+    if (closedpulls[i].count > max_count) {
+        max_count = closedpulls[i].count;
+    }
+}
+x_scale = d3.scale.linear()
+    .domain([0, max_date])
+    .range([0, w]);
+
+y_scale = d3.scale.linear()
+    .domain([0, max_count])
+    .range([0, h]);
+
+svg = d3.select("body").append("svg");
+renderValues(svg, "blue", pulls, x_scale, y_scale);
+renderValues(svg, "yellow", closedpulls, x_scale, y_scale);
+renderValues(svg, "red", closedpullstime, x_scale);
+
+svg = d3.select("body").append("svg");
+renderValues(svg, "blue", forks);

@@ -95,7 +95,7 @@ def _download_repo_info(owner, name, fork, repository):
 
     prediction_string = ",".join(values)
 
-    contributors = contributors[0] + contributors[1]
+    contributors = contributors[0]
 
     repository.first_commit = time_created
     repository.last_commit = time_ended
@@ -194,6 +194,7 @@ class RepositoryDetail(DetailView):
         csv = pd.read_csv(f, names=gm.ATTRS, header=None, na_values=["nan", "?"])
         X = csv.transpose().to_dict().values()
         context['prediction'] = self.pipeline.predict(X)[0]
+        # commits
         commits = context['object'].commitcount_set.all()
         if len(commits) != 0:
             first_day = commits[0].date
@@ -206,6 +207,7 @@ class RepositoryDetail(DetailView):
             ]
         else:
             commits_json = []
+        # issues
         issues = context['object'].issuescount_set.all()
         closedissues = context['object'].closedissuescount_set.all()
         closedissuestime = context['object'].closedissuestime_set.all()
@@ -236,10 +238,58 @@ class RepositoryDetail(DetailView):
             issues_json = []
             closedissues_json = []
             closedissuestime_json = []
+        # pulls
+        pulls = context['object'].pullscount_set.all()
+        closedpulls = context['object'].closedpullscount_set.all()
+        closedpullstime = context['object'].closedpullstime_set.all()
+        if len(pulls) != 0:
+            first_day = pulls[0].date
+            pulls_json = [
+                {
+                    "count": pull.count,
+                    "date": pull.date.isoformat(),
+                    "distance": (pull.date - first_day).days
+                } for pull in pulls
+            ]
+            closedpulls_json = [
+                {
+                    "count": closedpull.count,
+                    "date": closedpull.date.isoformat(),
+                    "distance": (closedpull.date - first_day).days
+                } for closedpull in closedpulls
+            ]
+            closedpullstime_json = [
+                {
+                    "count": closedpulltime.count,
+                    "date": closedpulltime.date.isoformat(),
+                    "distance": (closedpulltime.date - first_day).days
+                } for closedpulltime in closedpullstime
+            ]
+        else:
+            pulls_json = []
+            closedpulls_json = []
+            closedpullstime_json = []
+        # forks
+        forks = context['object'].forkscount_set.all()
+        if len(forks) != 0:
+            first_day = forks[0].date
+            forks_json = [
+                {
+                    "count": fork.count,
+                    "date": fork.date.isoformat(),
+                    "distance": (fork.date - first_day).days
+                } for fork in forks
+            ]
+        else:
+            forks_json = []
         context['commits'] = json.dumps(commits_json)
         context['issues'] = json.dumps(issues_json)
         context['closedissues'] = json.dumps(closedissues_json)
         context['closedissuestime'] = json.dumps(closedissuestime_json)
+        context['pulls'] = json.dumps(pulls_json)
+        context['closedpulls'] = json.dumps(closedpulls_json)
+        context['closedpullstime'] = json.dumps(closedpullstime_json)
+        context['forks'] = json.dumps(forks_json)
         return context
 
 
