@@ -64,7 +64,13 @@ def _download_repo_info(owner, name, fork, repository):
     values = []
     now = date.today()
 
+    values.append(str(fork))
+
     commits, time_created, time_ended = gm.get_all_commits(gh, owner, name)
+    duration = (now - time_created).days + 1
+    values.append(str(duration))
+    since_last = (now - time_ended).days
+    values.append(str(since_last))
     values.extend(gm.get_commits_stats(commits, time_created, now))
 
     issues, pulls = gm.get_all_issues_pulls(gh, owner, name)
@@ -78,7 +84,8 @@ def _download_repo_info(owner, name, fork, repository):
         # toto cas od casu selze, protoze GitHub nechce poskytovat velkou spoustu stranek
         values.extend(["nan"] * 6)
 
-    values.extend(gm.get_contributors_stats(commits, time_created, now))
+    contributors = gm.get_contributors_stats(commits, time_created, now)
+    values.extend(contributors)
 
     ccomments = gm.get_all_commit_comments(gh, owner, name)
     values.extend(gm.get_commit_comments_stats(ccomments, time_created, now))
@@ -86,14 +93,9 @@ def _download_repo_info(owner, name, fork, repository):
     forks = gm.get_all_forks(gh, owner, name)
     values.extend(gm.get_forks_stats(forks, time_created, now))
 
-    duration = (now - time_created).days + 1
-    values.append(str(duration))
-    values.append(str(fork))
-
-    contributors = gm.get_contributors_stats(commits, time_created, now)
-    contributors = contributors[0] + contributors[1]
-
     prediction_string = ",".join(values)
+
+    contributors = contributors[0] + contributors[1]
 
     repository.first_commit = time_created
     repository.last_commit = time_ended

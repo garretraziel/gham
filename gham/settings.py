@@ -105,4 +105,4 @@ STATIC_URL = '/static/'
 GITHUB_URL = "https://www.github.com"
 GITHUB_USERNAME = os.environ.get("GH_USERNAME")
 GITHUB_PASSWORD = os.environ.get("GH_PASSWORD")
-DATASET_NAME = "fin_percentage.csv"
+DATASET_NAME = "2015-04-15-2.csv"

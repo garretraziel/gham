@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import datetime
 import django.core.validators
 
 
@@ -30,7 +31,7 @@ class Migration(migrations.Migration):
             name='ClosedIssuesTime',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('avg', models.FloatField()),
+                ('count', models.FloatField()),
                 ('date', models.DateField()),
             ],
         ),
@@ -46,7 +47,7 @@ class Migration(migrations.Migration):
             name='ClosedPullsTime',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('avg', models.FloatField()),
+                ('count', models.FloatField()),
                 ('date', models.DateField()),
             ],
         ),
@@ -57,6 +58,10 @@ class Migration(migrations.Migration):
                 ('count', models.IntegerField()),
                 ('date', models.DateField()),
             ],
+            options={
+                'ordering': ['date'],
+                'verbose_name_plural': 'commit counts',
+            },
         ),
         migrations.CreateModel(
             name='ForksCount',
@@ -73,6 +78,10 @@ class Migration(migrations.Migration):
                 ('count', models.IntegerField()),
                 ('date', models.DateField()),
             ],
+            options={
+                'ordering': ['date'],
+                'verbose_name_plural': 'issues counts',
+            },
         ),
         migrations.CreateModel(
             name='PullsCount',
@@ -88,11 +97,11 @@ class Migration(migrations.Migration):
                 ('repository_id', models.IntegerField(serialize=False, primary_key=True)),
                 ('name', models.CharField(max_length=255)),
                 ('fork', models.CharField(max_length=500, null=True, blank=True)),
-                ('first_commit', models.DateField()),
-                ('last_commit', models.DateField()),
-                ('contributors', models.IntegerField()),
+                ('first_commit', models.DateField(default=datetime.date.today)),
+                ('last_commit', models.DateField(default=datetime.date.today)),
+                ('contributors', models.IntegerField(default=0)),
                 ('fresh', models.BooleanField(default=False)),
-                ('prediction_string', models.TextField(validators=[django.core.validators.RegexValidator(regex=b'([^,]+(,|$)){89}')])),
+                ('prediction_string', models.TextField(default=b'0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0', validators=[django.core.validators.RegexValidator(regex=b'([^,]+(,|$)){89}')])),
                 ('owner', models.ForeignKey(to='ghactivity.Author')),
             ],
             options={
@@ -143,5 +152,13 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name='repository',
             unique_together=set([('owner', 'name')]),
+        ),
+        migrations.AlterUniqueTogether(
+            name='issuescount',
+            unique_together=set([('date', 'repository')]),
+        ),
+        migrations.AlterUniqueTogether(
+            name='commitcount',
+            unique_together=set([('date', 'repository')]),
         ),
     ]
