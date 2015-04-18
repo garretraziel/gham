@@ -1,6 +1,14 @@
 var renderValues = function (svg, color, values, x_scale, y_scale) {
     if (values.length === 0) {
-        // TODO: render no data
+        svg.append("text")
+            .attr("x", svg.attr("width") / 2)
+            .attr("y", svg.attr("height") / 2)
+            .attr("font-family", "sans-serif")
+            .attr("font-size", "20px")
+            .attr("fill", color)
+            .attr("text-anchor", "middle")
+            .attr("fill-opacity", 0.5)
+            .text("NO DATA");
         return;
     }
 
@@ -41,11 +49,20 @@ $.ajax({
 $.ajax({
     url: window.location.pathname + "/issues"
 }).done(function (i) {
-    var svg = d3.select("#issues_graph");
+    var svg = d3.select("#issues_graph"),
+        max_date_i = 0,
+        max_date_ci = 0,
+        max_date_ct = 0;
 
-    var max_date_i = i.issues[i.issues.length - 1].distance;
-    var max_date_ci = i.closed_issues[i.closed_issues.length - 1].distance;
-    var max_date_ct = i.closed_time[i.closed_time.length - 1].distance;
+    if (i.issues.length !== 0) {
+        max_date_i = i.issues[i.issues.length - 1].distance;
+    }
+    if (i.closed_issues.length !== 0) {
+        max_date_ci = i.closed_issues[i.closed_issues.length - 1].distance;
+    }
+    if (i.closed_time.length !== 0) {
+        max_date_ct = i.closed_time[i.closed_time.length - 1].distance;
+    }
     var max_date = Math.max(max_date_i, max_date_ci, max_date_ct);
 
     var max_count_i = d3.max(i.issues, function (v) { return v.count; });
@@ -69,11 +86,20 @@ $.ajax({
 $.ajax({
     url: window.location.pathname + "/pulls"
 }).done(function (i) {
-    var svg = d3.select("#pulls_graph");
+    var svg = d3.select("#pulls_graph"),
+        max_date_i = 0,
+        max_date_ci = 0,
+        max_date_ct = 0;
 
-    var max_date_i = i.pulls[i.pulls.length - 1].distance;
-    var max_date_ci = i.closed_pulls[i.closed_pulls.length - 1].distance;
-    var max_date_ct = i.closed_time[i.closed_time.length - 1].distance;
+    if (i.pulls.length !== 0) {
+        max_date_i = i.pulls[i.pulls.length - 1].distance;
+    }
+    if (i.closed_pulls.length !== 0) {
+        max_date_ci = i.closed_pulls[i.closed_pulls.length - 1].distance;
+    }
+    if (i.closed_time.length !== 0) {
+        max_date_ct = i.closed_time[i.closed_time.length - 1].distance;
+    }
     var max_date = Math.max(max_date_i, max_date_ci, max_date_ct);
 
     var max_count_i = d3.max(i.pulls, function (v) { return v.count; });
