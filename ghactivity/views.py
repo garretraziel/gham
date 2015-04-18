@@ -6,7 +6,6 @@ from django.http import Http404
 from django.conf import settings
 from django.http import JsonResponse
 
-from datetime import date
 import github
 from ghaminer import ghaminer as gm
 import os
@@ -24,22 +23,25 @@ from .models import Repository, Author, CommitCount, IssuesCount, ClosedIssuesCo
     ClosedPullsCount, ClosedPullsTime, ForksCount
 
 
-def _create_count_series(values, get_date, obj, repository):
+def create_count_series(values, get_date, obj, repository):
     if len(values) != 0:
+        to_create = []
         t_date = get_date(values[0])
         count = 0
         for value in values:
             if get_date(value) == t_date:
                 count += 1
             else:
-                obj.objects.create(count=count, date=t_date, repository=repository)
+                to_create.append(obj(count=count, date=t_date, repository=repository))
                 t_date = get_date(value)
                 count = 1
-        obj.objects.create(count=count, date=t_date, repository=repository)
+        to_create.append(obj(count=count, date=t_date, repository=repository))
+        obj.objects.bulk_create(to_create)
 
 
-def _create_average_series(values, get_date, get_value, obj, repository):
+def create_average_series(values, get_date, get_value, obj, repository):
     if len(values) != 0:
+        to_create = []
         t_date = get_date(values[0])
         count = 0
         s = 0.0
@@ -49,58 +51,26 @@ def _create_average_series(values, get_date, get_value, obj, repository):
                 s += get_value(value)
             else:
                 avg = s / count
-                obj.objects.create(count=avg, date=t_date, repository=repository)
+                to_create.append(obj(count=avg, date=t_date, repository=repository))
                 t_date = get_date(value)
                 count = 1
                 s = 0.0
         avg = s / count
-        obj.objects.create(count=avg, date=t_date, repository=repository)
+        to_create.append(obj(count=avg, date=t_date, repository=repository))
+        obj.objects.bulk_create(to_create)
 
 
-def _download_repo_info(owner, name, fork, repository):
+def download_repo_info(owner, name, repository):
     gh = github.GitHub(username=settings.GITHUB_USERNAME,
                        password=settings.GITHUB_PASSWORD)
 
-    values = []
-    now = date.today()
-
-    values.append(str(fork))
-
-    commits, time_created, time_ended = gm.get_all_commits(gh, owner, name)
-    duration = (now - time_created).days + 1
-    values.append(str(duration))
-    since_last = (now - time_ended).days
-    values.append(str(since_last))
-    values.extend(gm.get_commits_stats(commits, time_created, now))
-
-    issues, pulls = gm.get_all_issues_pulls(gh, owner, name)
-    values.extend(gm.get_issues_stats(issues, time_created, now))
-    values.extend(gm.get_issues_stats(pulls, time_created, now))
-
-    try:
-        events = gm.get_all_events(gh, owner, name)
-        values.extend(gm.get_events_stats(events, time_created, now))
-    except github.ApiError:
-        # toto cas od casu selze, protoze GitHub nechce poskytovat velkou spoustu stranek
-        values.extend(["nan"] * 6)
-
-    contributors = gm.get_contributors_stats(commits, time_created, now)
-    values.extend(contributors)
-
-    ccomments = gm.get_all_commit_comments(gh, owner, name)
-    values.extend(gm.get_commit_comments_stats(ccomments, time_created, now))
-
-    forks = gm.get_all_forks(gh, owner, name)
-    values.extend(gm.get_forks_stats(forks, time_created, now))
-
-    prediction_string = ",".join(values)
-
-    contributors = contributors[0]
+    commits, issues, pulls, forks, time_created, time_ended, contributors, predict = gm.get_repo_stats(gh, owner, name,
+                                                                                                       False)
 
     repository.first_commit = time_created
     repository.last_commit = time_ended
     repository.contributors = contributors
-    repository.prediction_string = prediction_string
+    repository.prediction_string = predict
 
     issues = [issue for issue, _ in issues]
     pulls = [pull for pull, _ in pulls]
@@ -110,21 +80,21 @@ def _download_repo_info(owner, name, fork, repository):
     pulls.sort(key=gm.get_direct_date)
     forks.sort(key=gm.get_direct_date)
 
-    _create_count_series(commits, gm.get_commit_date, CommitCount, repository)
+    create_count_series(commits, gm.get_commit_date, CommitCount, repository)
 
-    _create_count_series(issues, gm.get_direct_date, IssuesCount, repository)
+    create_count_series(issues, gm.get_direct_date, IssuesCount, repository)
     issues = [issue for issue in issues if issue['state'] == 'closed']
     issues.sort(key=gm.get_close_date)
-    _create_count_series(issues, gm.get_close_date, ClosedIssuesCount, repository)
-    _create_average_series(issues, gm.get_close_date, gm.get_time_to_close, ClosedIssuesTime, repository)
+    create_count_series(issues, gm.get_close_date, ClosedIssuesCount, repository)
+    create_average_series(issues, gm.get_close_date, gm.get_time_to_close, ClosedIssuesTime, repository)
 
-    _create_count_series(pulls, gm.get_direct_date, PullsCount, repository)
+    create_count_series(pulls, gm.get_direct_date, PullsCount, repository)
     pulls = [pull for pull in pulls if pull['state'] == 'closed']
     pulls.sort(key=gm.get_close_date)
-    _create_count_series(pulls, gm.get_close_date, ClosedPullsCount, repository)
-    _create_average_series(pulls, gm.get_close_date, gm.get_time_to_close, ClosedPullsTime, repository)
+    create_count_series(pulls, gm.get_close_date, ClosedPullsCount, repository)
+    create_average_series(pulls, gm.get_close_date, gm.get_time_to_close, ClosedPullsTime, repository)
 
-    _create_count_series(forks, gm.get_direct_date, ForksCount, repository)
+    create_count_series(forks, gm.get_direct_date, ForksCount, repository)
 
     repository.fresh = True
     repository.save()
@@ -141,8 +111,9 @@ def get_repo_info(request):
 
         author, _ = Author.objects.get_or_create(name=owner)
 
-        if Repository.objects.filter(owner__pk=author.pk).filter(name=name).count() != 0:
-            r = Repository.objects.filter(owner__pk=author.pk).filter(name=name).get()
+        existing = Repository.objects.filter(owner__pk=author.pk).filter(name=name)
+        if existing.exists():
+            r = existing.get()
             return redirect("repo_detail", pk=r.pk)
 
         gh = github.GitHub(username=settings.GITHUB_USERNAME,
@@ -156,7 +127,7 @@ def get_repo_info(request):
         r = Repository(repository_id=rid, owner=author, name=name, fork=str(fork))
         r.save()
 
-        t = threading.Thread(target=_download_repo_info, args=(owner, name, fork, r))
+        t = threading.Thread(target=download_repo_info, args=(owner, name, r))
         t.start()
 
         return redirect("repo_list")
@@ -175,16 +146,16 @@ class RepositoryDetail(DetailView):
             return
 
         csv = pd.read_csv(filename, na_values=["nan", "?"])
-        X_csv = csv.iloc[:, :-1].copy()
+        x_csv = csv.iloc[:, :-1].copy()
         y_csv = csv['result'].copy()
-        X = X_csv.transpose().to_dict().values()
+        x = x_csv.transpose().to_dict().values()
         y = y_csv.as_matrix()
 
         v = DictVectorizer(sparse=False)
         i = Imputer()
         clf = GradientBoostingRegressor()
         cls.pipeline = Pipeline([('vectorizer', v), ('imputer', i), ('regressor', clf)])
-        cls.pipeline.fit(X, y)
+        cls.pipeline.fit(x, y)
         joblib.dump(cls.pipeline, modelname)
 
     def get_context_data(self, **kwargs):
@@ -192,104 +163,8 @@ class RepositoryDetail(DetailView):
         pred_str = context['repository'].prediction_string
         f = StringIO(pred_str)
         csv = pd.read_csv(f, names=gm.ATTRS, header=None, na_values=["nan", "?"])
-        X = csv.transpose().to_dict().values()
-        context['prediction'] = self.pipeline.predict(X)[0]
-        # commits
-        commits = context['object'].commitcount_set.all()
-        if len(commits) != 0:
-            first_day = commits[0].date
-            commits_json = [
-                {
-                    "count": commit.count,
-                    "date": commit.date.isoformat(),
-                    "distance": (commit.date - first_day).days
-                } for commit in commits
-            ]
-        else:
-            commits_json = []
-        # issues
-        issues = context['object'].issuescount_set.all()
-        closedissues = context['object'].closedissuescount_set.all()
-        closedissuestime = context['object'].closedissuestime_set.all()
-        if len(issues) != 0:
-            first_day = issues[0].date
-            issues_json = [
-                {
-                    "count": issue.count,
-                    "date": issue.date.isoformat(),
-                    "distance": (issue.date - first_day).days
-                } for issue in issues
-            ]
-            closedissues_json = [
-                {
-                    "count": closedissue.count,
-                    "date": closedissue.date.isoformat(),
-                    "distance": (closedissue.date - first_day).days
-                } for closedissue in closedissues
-            ]
-            closedissuestime_json = [
-                {
-                    "count": closedissuetime.count,
-                    "date": closedissuetime.date.isoformat(),
-                    "distance": (closedissuetime.date - first_day).days
-                } for closedissuetime in closedissuestime
-            ]
-        else:
-            issues_json = []
-            closedissues_json = []
-            closedissuestime_json = []
-        # pulls
-        pulls = context['object'].pullscount_set.all()
-        closedpulls = context['object'].closedpullscount_set.all()
-        closedpullstime = context['object'].closedpullstime_set.all()
-        if len(pulls) != 0:
-            first_day = pulls[0].date
-            pulls_json = [
-                {
-                    "count": pull.count,
-                    "date": pull.date.isoformat(),
-                    "distance": (pull.date - first_day).days
-                } for pull in pulls
-            ]
-            closedpulls_json = [
-                {
-                    "count": closedpull.count,
-                    "date": closedpull.date.isoformat(),
-                    "distance": (closedpull.date - first_day).days
-                } for closedpull in closedpulls
-            ]
-            closedpullstime_json = [
-                {
-                    "count": closedpulltime.count,
-                    "date": closedpulltime.date.isoformat(),
-                    "distance": (closedpulltime.date - first_day).days
-                } for closedpulltime in closedpullstime
-            ]
-        else:
-            pulls_json = []
-            closedpulls_json = []
-            closedpullstime_json = []
-        # forks
-        forks = context['object'].forkscount_set.all()
-        if len(forks) != 0:
-            first_day = forks[0].date
-            forks_json = [
-                {
-                    "count": fork.count,
-                    "date": fork.date.isoformat(),
-                    "distance": (fork.date - first_day).days
-                } for fork in forks
-            ]
-        else:
-            forks_json = []
-        context['commits'] = json.dumps(commits_json)
-        context['issues'] = json.dumps(issues_json)
-        context['closedissues'] = json.dumps(closedissues_json)
-        context['closedissuestime'] = json.dumps(closedissuestime_json)
-        context['pulls'] = json.dumps(pulls_json)
-        context['closedpulls'] = json.dumps(closedpulls_json)
-        context['closedpullstime'] = json.dumps(closedpullstime_json)
-        context['forks'] = json.dumps(forks_json)
+        x = csv.transpose().to_dict().values()
+        context['prediction'] = self.pipeline.predict(x)[0]
         return context
 
 
@@ -298,11 +173,111 @@ class RepositoryListView(ListView):
 
 
 def status_json(request):
-    resp = {}
     values = []
     repos = Repository.objects.all()
     for repo in repos:
         values.append({"name": repo.full_name, "status": repo.fresh, "url": repo.get_absolute_url(),
                        "id": repo.id_name})
-    resp["val"] = values
-    return JsonResponse(resp, safe=False)
+    return JsonResponse(values, safe=False)
+
+
+def get_repo_commits(request, pk):
+    commits = CommitCount.objects.filter(repository__pk=pk)
+    if len(commits) != 0:
+        first_day = commits[0].date
+        commits_json = [
+            {
+                "count": commit.count,
+                "date": commit.date.isoformat(),
+                "distance": (commit.date - first_day).days
+            } for commit in commits
+        ]
+    else:
+        commits_json = []
+    return JsonResponse(commits_json, safe=False)
+
+
+def get_repo_issues(request, pk):
+    issues = IssuesCount.objects.filter(repository__pk=pk)
+    closedissues = ClosedIssuesCount.objects.filter(repository__pk=pk)
+    closedissuestime = ClosedIssuesTime.objects.filter(repository__pk=pk)
+    if len(issues) != 0:
+        first_day = issues[0].date
+        issues_json = [
+            {
+                "count": issue.count,
+                "date": issue.date.isoformat(),
+                "distance": (issue.date - first_day).days
+            } for issue in issues
+        ]
+        closedissues_json = [
+            {
+                "count": closedissue.count,
+                "date": closedissue.date.isoformat(),
+                "distance": (closedissue.date - first_day).days
+            } for closedissue in closedissues
+        ]
+        closedissuestime_json = [
+            {
+                "count": closedissuetime.count,
+                "date": closedissuetime.date.isoformat(),
+                "distance": (closedissuetime.date - first_day).days
+            } for closedissuetime in closedissuestime
+        ]
+    else:
+        issues_json = []
+        closedissues_json = []
+        closedissuestime_json = []
+    response = {"issues": issues_json, "closed_issues": closedissues_json, "closed_time": closedissuestime_json}
+    return JsonResponse(response, safe=False)
+
+
+def get_repo_pulls(request, pk):
+    pulls = PullsCount.objects.filter(repository__pk=pk)
+    closedpulls = ClosedPullsCount.objects.filter(repository__pk=pk)
+    closedpullstime = ClosedPullsTime.objects.filter(repository__pk=pk)
+    if len(pulls) != 0:
+        first_day = pulls[0].date
+        pulls_json = [
+            {
+                "count": pull.count,
+                "date": pull.date.isoformat(),
+                "distance": (pull.date - first_day).days
+            } for pull in pulls
+        ]
+        closedpulls_json = [
+            {
+                "count": closedpull.count,
+                "date": closedpull.date.isoformat(),
+                "distance": (closedpull.date - first_day).days
+            } for closedpull in closedpulls
+        ]
+        closedpullstime_json = [
+            {
+                "count": closedpulltime.count,
+                "date": closedpulltime.date.isoformat(),
+                "distance": (closedpulltime.date - first_day).days
+            } for closedpulltime in closedpullstime
+        ]
+    else:
+        pulls_json = []
+        closedpulls_json = []
+        closedpullstime_json = []
+    response = {"pulls": pulls_json, "closed_pulls": closedpulls_json, "closed_time": closedpullstime_json}
+    return JsonResponse(response, safe=False)
+
+
+def get_repo_forks(request, pk):
+    forks = ForksCount.objects.filter(repository__pk=pk)
+    if len(forks) != 0:
+        first_day = forks[0].date
+        forks_json = [
+            {
+                "count": fork.count,
+                "date": fork.date.isoformat(),
+                "distance": (fork.date - first_day).days
+            } for fork in forks
+        ]
+    else:
+        forks_json = []
+    return JsonResponse(forks_json, safe=False)

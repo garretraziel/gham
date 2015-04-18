@@ -9,19 +9,14 @@
         <tr><td>Named contributors:</td><td>{{ repository.contributors }}</td></tr>
         <tr><td>Prediction:</td><td>{{ prediction }}</td></tr>
     </table>
+
+    <svg width="400" height="200" id="commits_graph"></svg>
+    <svg width="400" height="200" id="issues_graph"></svg>
+    <svg width="400" height="200" id="pulls_graph"></svg>
+    <svg width="400" height="200" id="forks_graph"></svg>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        var commits = {{ commits | safe }};
-        var issues = {{ issues | safe }};
-        var closedissues = {{ closedissues | safe }};
-        var closedissuestime = {{ closedissuestime | safe }};
-        var pulls = {{ pulls | safe }};
-        var closedpulls = {{ closedpulls | safe }};
-        var closedpullstime = {{ closedpullstime | safe }};
-        var forks = {{ forks | safe }};
-    </script>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script src="/static/render_stats.js"></script>
 {% endblock %}

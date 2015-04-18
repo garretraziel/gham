@@ -1,33 +1,26 @@
-var w = 400;
-var h = 200;
-
 var renderValues = function (svg, color, values, x_scale, y_scale) {
-    if (values.length == 0) {
+    if (values.length === 0) {
+        // TODO: render no data
         return;
     }
 
     var max_date = values[values.length - 1].distance;
-    var max_count = 0;
-    for (var i = 0; i < values.length; i++) {
-        if (values[i].count > max_count) {
-            max_count = values[i].count;
-        }
-    }
+    var max_count = d3.max(values, function (v) { return v.count; });
+
     x_scale = x_scale || d3.scale.linear()
         .domain([0, max_date])
-        .range([0, w]);
+        .range([0, svg.attr("width")]);
 
     y_scale = y_scale || d3.scale.linear()
         .domain([0, max_count])
-        .range([0, h]);
+        .range([0, svg.attr("height")]);
 
-    svg.attr("width", w).attr("height", h);
     var lineFunction = d3.svg.line()
         .x(function (d) {
             return x_scale(d.distance);
         })
         .y(function (d) {
-            return h - y_scale(d.count);
+            return svg.attr("height") - y_scale(d.count);
         })
         .interpolate("linear");
 
@@ -38,66 +31,72 @@ var renderValues = function (svg, color, values, x_scale, y_scale) {
         .attr("fill", "none");
 };
 
-var svg = d3.select("body").append("svg");
-renderValues(svg, "blue", commits);
+$.ajax({
+    url: window.location.pathname + "/commits"
+}).done(function (commits) {
+    var svg = d3.select("#commits_graph");
+    renderValues(svg, "blue", commits);
+});
 
-var max_date_i = issues[issues.length - 1].distance;
-var max_date_ci = closedissues[closedissues.length - 1].distance;
-var max_date_ct = closedissuestime[closedissuestime.length - 1].distance;
-var max_date = Math.max(max_date_i, max_date_ci, max_date_ct);
+$.ajax({
+    url: window.location.pathname + "/issues"
+}).done(function (i) {
+    var svg = d3.select("#issues_graph");
 
-var max_count = 0;
-for (var i = 0; i < issues.length; i++) {
-    if (issues[i].count > max_count) {
-        max_count = issues[i].count;
-    }
-}
-for (i = 0; i < closedissues.length; i++) {
-    if (closedissues[i].count > max_count) {
-        max_count = closedissues[i].count;
-    }
-}
-var x_scale = d3.scale.linear()
-    .domain([0, max_date])
-    .range([0, w]);
+    var max_date_i = i.issues[i.issues.length - 1].distance;
+    var max_date_ci = i.closed_issues[i.closed_issues.length - 1].distance;
+    var max_date_ct = i.closed_time[i.closed_time.length - 1].distance;
+    var max_date = Math.max(max_date_i, max_date_ci, max_date_ct);
 
-var y_scale = d3.scale.linear()
-    .domain([0, max_count])
-    .range([0, h]);
+    var max_count_i = d3.max(i.issues, function (v) { return v.count; });
+    var max_count_c = d3.max(i.closed_issues, function (v) { return v.count; });
+    var max_count = Math.max(max_count_i, max_count_c);
 
-svg = d3.select("body").append("svg");
-renderValues(svg, "blue", issues, x_scale, y_scale);
-renderValues(svg, "yellow", closedissues, x_scale, y_scale);
-renderValues(svg, "red", closedissuestime, x_scale);
+    var x_scale = d3.scale.linear()
+        .domain([0, max_date])
+        .range([0, svg.attr("width")]);
 
-max_date_i = pulls[pulls.length - 1].distance;
-max_date_ci = closedpulls[closedpulls.length - 1].distance;
-max_date_ct = closedpullstime[closedpullstime.length - 1].distance;
-max_date = Math.max(max_date_i, max_date_ci, max_date_ct);
+    var y_scale = d3.scale.linear()
+        .domain([0, max_count])
+        .range([0, svg.attr("height")]);
 
-max_count = 0;
-for (i = 0; i < pulls.length; i++) {
-    if (pulls[i].count > max_count) {
-        max_count = pulls[i].count;
-    }
-}
-for (i = 0; i < closedpulls.length; i++) {
-    if (closedpulls[i].count > max_count) {
-        max_count = closedpulls[i].count;
-    }
-}
-x_scale = d3.scale.linear()
-    .domain([0, max_date])
-    .range([0, w]);
+    renderValues(svg, "blue", i.issues, x_scale, y_scale);
+    renderValues(svg, "yellow", i.closed_issues, x_scale, y_scale);
+    renderValues(svg, "red", i.closed_time, x_scale);
 
-y_scale = d3.scale.linear()
-    .domain([0, max_count])
-    .range([0, h]);
+});
 
-svg = d3.select("body").append("svg");
-renderValues(svg, "blue", pulls, x_scale, y_scale);
-renderValues(svg, "yellow", closedpulls, x_scale, y_scale);
-renderValues(svg, "red", closedpullstime, x_scale);
+$.ajax({
+    url: window.location.pathname + "/pulls"
+}).done(function (i) {
+    var svg = d3.select("#pulls_graph");
 
-svg = d3.select("body").append("svg");
-renderValues(svg, "blue", forks);
+    var max_date_i = i.pulls[i.pulls.length - 1].distance;
+    var max_date_ci = i.closed_pulls[i.closed_pulls.length - 1].distance;
+    var max_date_ct = i.closed_time[i.closed_time.length - 1].distance;
+    var max_date = Math.max(max_date_i, max_date_ci, max_date_ct);
+
+    var max_count_i = d3.max(i.pulls, function (v) { return v.count; });
+    var max_count_c = d3.max(i.closed_pulls, function (v) { return v.count; });
+    var max_count = Math.max(max_count_i, max_count_c);
+
+    var x_scale = d3.scale.linear()
+        .domain([0, max_date])
+        .range([0, svg.attr("width")]);
+
+    var y_scale = d3.scale.linear()
+        .domain([0, max_count])
+        .range([0, svg.attr("height")]);
+
+    renderValues(svg, "blue", i.pulls, x_scale, y_scale);
+    renderValues(svg, "yellow", i.closed_pulls, x_scale, y_scale);
+    renderValues(svg, "red", i.closed_time, x_scale);
+
+});
+
+$.ajax({
+    url: window.location.pathname + "/forks"
+}).done(function (forks) {
+    var svg = d3.select("#forks_graph");
+    renderValues(svg, "blue", forks);
+});
