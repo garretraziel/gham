@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load staticfiles %}
 
 {% block body %}
     <ul>
@@ -14,5 +15,5 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="/static/repo_list.js"></script>
+    <script src="{% static "ghactivity/repo_list.js" %}"></script>
 {% endblock %}

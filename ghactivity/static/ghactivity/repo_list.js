@@ -1,4 +1,5 @@
 $(document).ready(function () {
+    "use strict";
     setInterval(function () {
         $.ajax({
             url: "/activity/status"

@@ -1,4 +1,9 @@
 {% extends "base.html" %}
+{% load staticfiles %}
+
+{% block styles %}
+    <link rel="stylesheet" type="text/css" href="{% static "css/activity.css" %}"
+{% endblock %}
 
 {% block body %}
     <table>
@@ -10,13 +15,13 @@
         <tr><td>Prediction:</td><td>{{ prediction }}</td></tr>
     </table>
 
-    <svg width="400" height="200" id="commits_graph"></svg>
-    <svg width="400" height="200" id="issues_graph"></svg>
-    <svg width="400" height="200" id="pulls_graph"></svg>
-    <svg width="400" height="200" id="forks_graph"></svg>
+    <svg width="800" height="400" id="commits_graph"></svg>
+    <svg width="800" height="400" id="issues_graph"></svg>
+    <svg width="800" height="400" id="pulls_graph"></svg>
+    <svg width="800" height="400" id="forks_graph"></svg>
 {% endblock %}
 
 {% block scripts %}
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-    <script src="/static/render_stats.js"></script>
+    <script src="{% static "ghactivity/render_stats.js" %}"></script>
 {% endblock %}
