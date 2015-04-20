@@ -17,7 +17,7 @@ from sklearn.pipeline import Pipeline
 import pandas as pd
 from StringIO import StringIO
 import threading
-import json
+import datetime
 
 from .models import Repository, Author, CommitCount, IssuesCount, ClosedIssuesCount, ClosedIssuesTime, PullsCount, \
     ClosedPullsCount, ClosedPullsTime, ForksCount
@@ -81,8 +81,8 @@ def download_repo_info(owner, name, repository):
     forks.sort(key=gm.get_direct_date)
 
     create_count_series(commits, gm.get_commit_date, CommitCount, repository)
-
     create_count_series(issues, gm.get_direct_date, IssuesCount, repository)
+
     issues = [issue for issue in issues if issue['state'] == 'closed']
     issues.sort(key=gm.get_close_date)
     create_count_series(issues, gm.get_close_date, ClosedIssuesCount, repository)
@@ -104,7 +104,7 @@ def get_repo_info(request):
     if request.method == 'GET':
         c = {}
         c.update(csrf(request))
-        return render_to_response("ghactivity/index.html", c)
+        return render_to_response("ghactivity/repository_get.html", c)
     elif request.method == 'POST':
         full_name = request.POST['repository']
         owner, name = full_name.split("/", 1)
@@ -114,7 +114,10 @@ def get_repo_info(request):
         existing = Repository.objects.filter(owner__pk=author.pk).filter(name=name)
         if existing.exists():
             r = existing.get()
-            return redirect("repo_detail", pk=r.pk)
+            if r.fresh:
+                return redirect("repo_detail", pk=r.pk)
+            else:
+                return redirect("repo_list")
 
         gh = github.GitHub(username=settings.GITHUB_USERNAME,
                            password=settings.GITHUB_PASSWORD)
@@ -183,15 +186,33 @@ def status_json(request):
 
 def get_repo_commits(request, pk):
     commits = CommitCount.objects.filter(repository__pk=pk)
+    today = datetime.date.today()
     if len(commits) != 0:
         first_day = commits[0].date
-        commits_json = [
-            {
+        iterate_day = first_day
+        one_day_more = datetime.timedelta(days=1)
+        commits_json = []
+        for commit in commits:
+            while iterate_day != commit.date:
+                commits_json.append({
+                    "count": 0,
+                    "date": iterate_day.isoformat(),
+                    "distance": (iterate_day - first_day).days
+                })
+                iterate_day += one_day_more
+            commits_json.append({
                 "count": commit.count,
                 "date": commit.date.isoformat(),
                 "distance": (commit.date - first_day).days
-            } for commit in commits
-        ]
+            })
+            iterate_day += one_day_more
+        while iterate_day != today:
+            commits_json.append({
+                "count": 0,
+                "date": iterate_day.isoformat(),
+                "distance": (iterate_day - first_day).days
+            })
+            iterate_day += one_day_more
     else:
         commits_json = []
     return JsonResponse(commits_json, safe=False)
@@ -201,29 +222,79 @@ def get_repo_issues(request, pk):
     issues = IssuesCount.objects.filter(repository__pk=pk)
     closedissues = ClosedIssuesCount.objects.filter(repository__pk=pk)
     closedissuestime = ClosedIssuesTime.objects.filter(repository__pk=pk)
+    today = datetime.date.today()
     if len(issues) != 0:
         first_day = issues[0].date
-        issues_json = [
-            {
+        iterate_day = first_day
+        one_day_more = datetime.timedelta(days=1)
+        issues_json = []
+        for issue in issues:
+            while iterate_day != issue.date:
+                issues_json.append({
+                    "count": 0,
+                    "date": iterate_day.isoformat(),
+                    "distance": (iterate_day - first_day).days
+                })
+                iterate_day += one_day_more
+            issues_json.append({
                 "count": issue.count,
                 "date": issue.date.isoformat(),
                 "distance": (issue.date - first_day).days
-            } for issue in issues
-        ]
-        closedissues_json = [
-            {
-                "count": closedissue.count,
-                "date": closedissue.date.isoformat(),
-                "distance": (closedissue.date - first_day).days
-            } for closedissue in closedissues
-        ]
-        closedissuestime_json = [
-            {
-                "count": closedissuetime.count,
-                "date": closedissuetime.date.isoformat(),
-                "distance": (closedissuetime.date - first_day).days
-            } for closedissuetime in closedissuestime
-        ]
+            })
+            iterate_day += one_day_more
+        while iterate_day != today:
+            issues_json.append({
+                "count": 0,
+                "date": iterate_day.isoformat(),
+                "distance": (iterate_day - first_day).days
+            })
+            iterate_day += one_day_more
+        iterate_day = first_day
+        closedissues_json = []
+        for issue in closedissues:
+            while iterate_day != issue.date:
+                closedissues_json.append({
+                    "count": 0,
+                    "date": iterate_day.isoformat(),
+                    "distance": (iterate_day - first_day).days
+                })
+                iterate_day += one_day_more
+            closedissues_json.append({
+                "count": issue.count,
+                "date": issue.date.isoformat(),
+                "distance": (issue.date - first_day).days
+            })
+            iterate_day += one_day_more
+        while iterate_day != today:
+            closedissues_json.append({
+                "count": 0,
+                "date": iterate_day.isoformat(),
+                "distance": (iterate_day - first_day).days
+            })
+            iterate_day += one_day_more
+        iterate_day = first_day
+        closedissuestime_json = []
+        for issuetime in closedissuestime:
+            while iterate_day != issuetime.date:
+                closedissuestime_json.append({
+                    "count": 0,
+                    "date": iterate_day.isoformat(),
+                    "distance": (iterate_day - first_day).days
+                })
+                iterate_day += one_day_more
+            closedissuestime_json.append({
+                "count": issuetime.count,
+                "date": issuetime.date.isoformat(),
+                "distance": (issuetime.date - first_day).days
+            })
+            iterate_day += one_day_more
+        while iterate_day != today:
+            closedissuestime_json.append({
+                "count": 0,
+                "date": iterate_day.isoformat(),
+                "distance": (iterate_day - first_day).days
+            })
+            iterate_day += one_day_more
     else:
         issues_json = []
         closedissues_json = []
@@ -236,29 +307,79 @@ def get_repo_pulls(request, pk):
     pulls = PullsCount.objects.filter(repository__pk=pk)
     closedpulls = ClosedPullsCount.objects.filter(repository__pk=pk)
     closedpullstime = ClosedPullsTime.objects.filter(repository__pk=pk)
+    today = datetime.date.today()
     if len(pulls) != 0:
         first_day = pulls[0].date
-        pulls_json = [
-            {
+        iterate_day = first_day
+        one_day_more = datetime.timedelta(days=1)
+        pulls_json = []
+        for pull in pulls:
+            while iterate_day != pull.date:
+                pulls_json.append({
+                    "count": 0,
+                    "date": iterate_day.isoformat(),
+                    "distance": (iterate_day - first_day).days
+                })
+                iterate_day += one_day_more
+            pulls_json.append({
                 "count": pull.count,
                 "date": pull.date.isoformat(),
                 "distance": (pull.date - first_day).days
-            } for pull in pulls
-        ]
-        closedpulls_json = [
-            {
-                "count": closedpull.count,
-                "date": closedpull.date.isoformat(),
-                "distance": (closedpull.date - first_day).days
-            } for closedpull in closedpulls
-        ]
-        closedpullstime_json = [
-            {
-                "count": closedpulltime.count,
-                "date": closedpulltime.date.isoformat(),
-                "distance": (closedpulltime.date - first_day).days
-            } for closedpulltime in closedpullstime
-        ]
+            })
+            iterate_day += one_day_more
+        while iterate_day != today:
+            pulls_json.append({
+                "count": 0,
+                "date": iterate_day.isoformat(),
+                "distance": (iterate_day - first_day).days
+            })
+            iterate_day += one_day_more
+        iterate_day = first_day
+        closedpulls_json = []
+        for pull in closedpulls:
+            while iterate_day != pull.date:
+                closedpulls_json.append({
+                    "count": 0,
+                    "date": iterate_day.isoformat(),
+                    "distance": (iterate_day - first_day).days
+                })
+                iterate_day += one_day_more
+            closedpulls_json.append({
+                "count": pull.count,
+                "date": pull.date.isoformat(),
+                "distance": (pull.date - first_day).days
+            })
+            iterate_day += one_day_more
+        while iterate_day != today:
+            closedpulls_json.append({
+                "count": 0,
+                "date": iterate_day.isoformat(),
+                "distance": (iterate_day - first_day).days
+            })
+            iterate_day += one_day_more
+        iterate_day = first_day
+        closedpullstime_json = []
+        for pulltime in closedpullstime:
+            while iterate_day != pulltime.date:
+                closedpullstime_json.append({
+                    "count": 0,
+                    "date": iterate_day.isoformat(),
+                    "distance": (iterate_day - first_day).days
+                })
+                iterate_day += one_day_more
+            closedpullstime_json.append({
+                "count": pulltime.count,
+                "date": pulltime.date.isoformat(),
+                "distance": (pulltime.date - first_day).days
+            })
+            iterate_day += one_day_more
+        while iterate_day != today:
+            closedpullstime_json.append({
+                "count": 0,
+                "date": iterate_day.isoformat(),
+                "distance": (iterate_day - first_day).days
+            })
+            iterate_day += one_day_more
     else:
         pulls_json = []
         closedpulls_json = []
@@ -269,15 +390,33 @@ def get_repo_pulls(request, pk):
 
 def get_repo_forks(request, pk):
     forks = ForksCount.objects.filter(repository__pk=pk)
+    today = datetime.date.today()
     if len(forks) != 0:
         first_day = forks[0].date
-        forks_json = [
-            {
-                "count": fork.count,
-                "date": fork.date.isoformat(),
-                "distance": (fork.date - first_day).days
-            } for fork in forks
-        ]
+        iterate_day = first_day
+        one_day_more = datetime.timedelta(days=1)
+        forks_json = []
+        for forks in forks:
+            while iterate_day != forks.date:
+                forks_json.append({
+                    "count": 0,
+                    "date": iterate_day.isoformat(),
+                    "distance": (iterate_day - first_day).days
+                })
+                iterate_day += one_day_more
+            forks_json.append({
+                "count": forks.count,
+                "date": forks.date.isoformat(),
+                "distance": (forks.date - first_day).days
+            })
+            iterate_day += one_day_more
+        while iterate_day != today:
+            forks_json.append({
+                "count": 0,
+                "date": iterate_day.isoformat(),
+                "distance": (iterate_day - first_day).days
+            })
+            iterate_day += one_day_more
     else:
         forks_json = []
     return JsonResponse(forks_json, safe=False)

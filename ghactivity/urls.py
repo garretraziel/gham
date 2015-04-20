@@ -6,7 +6,7 @@ from .views import get_repo_info, status_json, RepositoryDetail, RepositoryListV
 RepositoryDetail.load_clf(settings.DATASET_NAME)
 
 urlpatterns = [
-    url(r'^$', get_repo_info, name="get_repo_info"),
+    url(r'^get/$', get_repo_info, name="get_repo_info"),
     url(r'list/$', RepositoryListView.as_view(), name="repo_list"),
     url(r'status/$', status_json),
     url(r'^(?P<pk>\d+)$', RepositoryDetail.as_view(), name="repo_detail"),

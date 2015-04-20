@@ -1,14 +1,21 @@
-var renderSingleValues = function (svg, values, color) {
+var width = 800;
+var height = 400;
+var aspect = height / width;
+
+var renderSingleValues = function (svg, values, color, scaling_id) {
     "use strict";
 
     var padding = 30;
-    var width = svg.attr("width");
-    var height = svg.attr("height");
+    var real_width = $(scaling_id).width();
+    svg.attr("preserveAspectRatio", "xMidYMid")
+        .attr("viewBox", "0 0 800 400")
+        .attr("width", real_width)
+        .attr("height", real_width * aspect);
 
     if (values.length === 0) {
         svg.append("text")
-            .attr("x", svg.attr("width") / 2)
-            .attr("y", svg.attr("height") / 2)
+            .attr("x", width / 2)
+            .attr("y", height / 2)
             .attr("font-family", "sans-serif")
             .attr("font-size", "20px")
             .attr("fill", color)
@@ -37,8 +44,12 @@ var renderSingleValues = function (svg, values, color) {
         .orient("bottom")
         .ticks(6)
         .tickFormat(function (d) {
-            var date = new Date(firstDate.getTime() + d*24*60*60*1000);
-            return (date.getMonth() + 1) + " " + date.getFullYear();
+            var date = new Date(firstDate.getTime() + d * 24 * 60 * 60 * 1000);
+            if ((Date.now() - firstDate.getTime()) / 1000 / 60 / 60 / 24 / 365 > 1) {
+                return (date.getMonth() + 1) + " " + date.getFullYear();
+            } else {
+                return date.getDate() + " " + (date.getMonth() + 1) + " " + date.getFullYear();
+            }
         });
 
     var yAxis = d3.svg.axis()
@@ -72,13 +83,19 @@ var renderSingleValues = function (svg, values, color) {
         .call(yAxis);
 };
 
-var renderThreeValues = function (svg, values_a, color_a, values_b, color_b, values_c, color_c) {
+var renderThreeValues = function (svg, scaling_id, values_a, color_a, values_b, color_b, values_c, color_c) {
     "use strict";
+
+    var real_width = $(scaling_id).width();
+    svg.attr("preserveAspectRatio", "xMidYMid")
+        .attr("viewBox", "0 0 800 400")
+        .attr("width", real_width)
+        .attr("height", real_width * aspect);
 
     if (values_a.length === 0 && values_b.length === 0 && values_c.length === 0) {
         svg.append("text")
-            .attr("x", svg.attr("width") / 2)
-            .attr("y", svg.attr("height") / 2)
+            .attr("x", width / 2)
+            .attr("y", height / 2)
             .attr("font-family", "sans-serif")
             .attr("font-size", "20px")
             .attr("fill", color_a)
@@ -91,8 +108,6 @@ var renderThreeValues = function (svg, values_a, color_a, values_b, color_b, val
         maxDateCi = 0,
         maxDateCt = 0;
     var padding = 30;
-    var width = svg.attr("width");
-    var height = svg.attr("height");
 
     if (values_a.length !== 0) {
         maxDateI = values_a[values_a.length - 1].distance;
@@ -136,8 +151,12 @@ var renderThreeValues = function (svg, values_a, color_a, values_b, color_b, val
         .orient("bottom")
         .ticks(6)
         .tickFormat(function (d) {
-            var date = new Date(firstDate.getTime() + d*24*60*60*1000);
-            return (date.getMonth() + 1) + " " + date.getFullYear();
+            var date = new Date(firstDate.getTime() + d * 24 * 60 * 60 * 1000);
+            if ((Date.now() - firstDate.getTime()) / 1000 / 60 / 60 / 24 / 365 > 1) {
+                return (date.getMonth() + 1) + " " + date.getFullYear();
+            } else {
+                return date.getDate() + " " + (date.getMonth() + 1) + " " + date.getFullYear();
+            }
         });
 
     var yAxisL = d3.svg.axis()
@@ -207,7 +226,7 @@ $.ajax({
 }).done(function (commits) {
     "use strict";
     var svg = d3.select("#commits_graph");
-    renderSingleValues(svg, commits, "blue");
+    renderSingleValues(svg, commits, "blue", "#cgraph");
 });
 
 $.ajax({
@@ -215,7 +234,7 @@ $.ajax({
 }).done(function (response) {
     "use strict";
     var svg = d3.select("#issues_graph");
-    renderThreeValues(svg, response.issues, "red", response.closed_issues, "green", response.closed_time, "blue");
+    renderThreeValues(svg, "#igraph", response.issues, "red", response.closed_issues, "green", response.closed_time, "blue");
 });
 
 $.ajax({
@@ -223,7 +242,7 @@ $.ajax({
 }).done(function (response) {
     "use strict";
     var svg = d3.select("#pulls_graph");
-    renderThreeValues(svg, response.pulls, "red", response.closed_pulls, "green", response.closed_time, "blue");
+    renderThreeValues(svg, "#pgraph", response.pulls, "red", response.closed_pulls, "green", response.closed_time, "blue");
 });
 
 $.ajax({
@@ -231,5 +250,27 @@ $.ajax({
 }).done(function (forks) {
     "use strict";
     var svg = d3.select("#forks_graph");
-    renderSingleValues(svg, forks, "blue");
+    renderSingleValues(svg, forks, "blue", "#fgraph");
+});
+
+$(document).ready(function () {
+    "use strict";
+    $(window).resize(function () {
+        var real_width = $("#cgraph").width();
+        var svg = d3.select("#commits_graph");
+        svg.attr("width", real_width);
+        svg.attr("height", real_width * aspect);
+        real_width = $("#fgraph").width();
+        svg = d3.select("#forks_graph");
+        svg.attr("width", real_width);
+        svg.attr("height", real_width * aspect);
+        real_width = $("#igraph").width();
+        svg = d3.select("#issues_graph");
+        svg.attr("width", real_width);
+        svg.attr("height", real_width * aspect);
+        real_width = $("#pgraph").width();
+        svg = d3.select("#pulls_graph");
+        svg.attr("width", real_width);
+        svg.attr("height", real_width * aspect);
+    });
 });

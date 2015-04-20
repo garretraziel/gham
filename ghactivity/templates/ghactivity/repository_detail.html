@@ -2,23 +2,76 @@
 {% load staticfiles %}
 
 {% block styles %}
-    <link rel="stylesheet" type="text/css" href="{% static "css/activity.css" %}"
+    <link rel="stylesheet" type="text/css" href="{% static "css/activity.css" %}">
 {% endblock %}
 
 {% block body %}
-    <table>
-        <tr>{{ repository.full_name }}</tr>
-        <tr><td>Fork:</td><td>{{ repository.fork }}</td></tr>
-        <tr><td>First commit:</td><td>{{ repository.first_commit }}</td></tr>
-        <tr><td>Last commit:</td><td>{{ repository.last_commit }}</td></tr>
-        <tr><td>Named contributors:</td><td>{{ repository.contributors }}</td></tr>
-        <tr><td>Prediction:</td><td>{{ prediction }}</td></tr>
-    </table>
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <div class="page-header">
+                <h1 class="text-center"><a href="{{ repository.github_url }}">{{ repository.full_name }}</a></h1>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <table class="table">
+                <tr>
+                    <th class="text-center">Fork</th>
+                    <th class="text-center">First commit</th>
+                    <th class="text-center">Last commit</th>
+                    <th class="text-center">Non-anonymous contributors</th>
+                </tr>
+                <tr>
+                    <td class="text-center">{{ repository.fork }}</td>
+                    <td class="text-center">{{ repository.first_commit }}</td>
+                    <td class="text-center">{{ repository.last_commit }}</td>
+                    <td class="text-center">{{ repository.contributors }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4 col-md-offset-4"><p class="text-center prediction">
+            Prediction: {{ prediction | floatformat:"-2" }}</p></div>
+    </div>
 
-    <svg width="800" height="400" id="commits_graph"></svg>
-    <svg width="800" height="400" id="issues_graph"></svg>
-    <svg width="800" height="400" id="pulls_graph"></svg>
-    <svg width="800" height="400" id="forks_graph"></svg>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">Commits</div>
+                <div class="panel-body" id="cgraph">
+                    <svg id="commits_graph"></svg>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">Issues</div>
+                <div class="panel-body" id="igraph">
+                    <svg id="issues_graph"></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">Pull requests</div>
+                <div class="panel-body" id="pgraph">
+                    <svg id="pulls_graph"></svg>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">Forks</div>
+                <div class="panel-body" id="fgraph">
+                    <svg id="forks_graph"></svg>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
