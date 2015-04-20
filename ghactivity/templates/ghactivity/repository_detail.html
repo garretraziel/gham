@@ -32,8 +32,22 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-md-4 col-md-offset-4"><p class="text-center prediction">
-            Prediction: {{ prediction | floatformat:"-2" }}</p></div>
+        <div class="col-md-4 col-md-offset-4">
+            <p class="text-center prediction">
+                Prediction: {{ prediction | floatformat:"-2" }}
+            </p>
+            <p class="text-center prediction">
+                {% if prediction > 66 %}
+                    <span class="label label-info">At the Beginning</span>
+                {% elif prediction > 33 %}
+                    <span class="label label-success">Active</span>
+                {% elif prediction > 5 %}
+                    <span class="label label-danger">Declining</span>
+                {% else %}
+                    <span class="label label-default">Probably Dead</span>
+                {% endif %}
+            </p>
+        </div>
     </div>
 
     <div class="row">

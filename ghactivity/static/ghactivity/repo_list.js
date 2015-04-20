@@ -7,7 +7,13 @@ $(document).ready(function () {
             for (var i = 0; i < response.length; i++) {
                 if (response[i].status) {
                     var result_html = '<a href="' + response[i].url + '">' + response[i].name + '</a>';
-                    $("#" + response[i].id).html(result_html);
+                    var element = $("#" + response[i].id);
+                    element.html(result_html);
+                    element.removeClass("disabled");
+                } else {
+                    element = $("#" + response[i].id);
+                    element.html(response[i].name);
+                    element.addClass("disabled");
                 }
             }
         });

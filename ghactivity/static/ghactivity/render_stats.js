@@ -74,11 +74,13 @@ var renderSingleValues = function (svg, values, color, scaling_id) {
 
     svg.append("g")
         .attr("class", "axis")
+        .attr("stroke-width", 2)
         .attr("transform", "translate(0," + (height - padding) + ")")
         .call(xAxis);
 
     svg.append("g")
         .attr("class", "axis")
+        .attr("stroke-width", 2)
         .attr("transform", "translate(" + padding + ",0)")
         .call(yAxis);
 };
@@ -162,7 +164,8 @@ var renderThreeValues = function (svg, scaling_id, values_a, color_a, values_b, 
     var yAxisL = d3.svg.axis()
         .scale(yScaleC)
         .orient("left")
-        .ticks(5);
+        .ticks(5)
+        .tickSize(12);
 
     var yAxisR = d3.svg.axis()
         .scale(yScaleT)
@@ -207,16 +210,19 @@ var renderThreeValues = function (svg, scaling_id, values_a, color_a, values_b, 
 
     svg.append("g")
         .attr("class", "axis")
+        .attr("stroke-width", 2)
         .attr("transform", "translate(0," + (height - padding) + ")")
         .call(xAxis);
 
     svg.append("g")
         .attr("class", "axis")
+        .attr("stroke-width", 2)
         .attr("transform", "translate(" + padding + ",0)")
         .call(yAxisL);
 
     svg.append("g")
         .attr("class", "axis")
+        .attr("stroke-width", 2)
         .attr("transform", "translate(" + (width - padding) + ",0)")
         .call(yAxisR);
 };

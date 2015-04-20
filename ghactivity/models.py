@@ -45,7 +45,7 @@ class Repository(models.Model):
         return reverse('repo_detail', kwargs={"pk": self.pk})
 
     class Meta:
-        ordering = ['-repository_id']
+        ordering = ['owner__name', 'name']
         verbose_name_plural = "repositories"
         unique_together = (('owner', 'name'),)
 
