@@ -18,11 +18,18 @@
                 </li>
                 {% for repository in repository_list %}
                     {% if repository.fresh %}
-                        <li class="list-group-item" id="{{ repository.id_name }}"><a
-                                href="{{ repository.get_absolute_url }}">{{ repository.full_name }}</a></li>
+                <li class="list-group-item" id="{{ repository.id_name }}">
+                  <a href="{{ repository.get_absolute_url }}">
+                    {{ repository.full_name }}
+                  </a>
+                  {% if repository.created_by == request.user %}
+                  <a class="text-right" href="#">delete</a>
+                  {% endif %}
+                </li>
                     {% else %}
-                        <li class="list-group-item disabled"
-                            id="{{ repository.id_name }}">{{ repository.full_name }}</li>
+                <li class="list-group-item disabled" id="{{ repository.id_name }}">
+                  {{ repository.full_name }}
+                </li>
                     {% endif %}
                 {% endfor %}
             </ul>

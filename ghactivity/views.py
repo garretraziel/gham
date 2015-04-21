@@ -1,10 +1,12 @@
 from django.shortcuts import render_to_response
 from django.views.generic import DetailView, ListView
 from django.template.context_processors import csrf
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.http import Http404
 from django.conf import settings
 from django.http import JsonResponse
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
 
 import github
 from ghaminer import ghaminer as gm
@@ -60,10 +62,7 @@ def create_average_series(values, get_date, get_value, obj, repository):
         obj.objects.bulk_create(to_create)
 
 
-def download_repo_info(owner, name, repository):
-    gh = github.GitHub(username=settings.GITHUB_USERNAME,
-                       password=settings.GITHUB_PASSWORD)
-
+def download_repo_info(gh, owner, name, repository):
     commits, issues, pulls, forks, time_created, time_ended, contributors, predict = gm.get_repo_stats(gh, owner, name,
                                                                                                        False)
 
@@ -100,6 +99,7 @@ def download_repo_info(owner, name, repository):
     repository.save()
 
 
+@login_required(login_url='/')
 def get_repo_info(request):
     if request.method == 'GET':
         c = {}
@@ -111,33 +111,34 @@ def get_repo_info(request):
 
         author, _ = Author.objects.get_or_create(name=owner)
 
-        existing = Repository.objects.filter(owner__pk=author.pk).filter(name=name)
+        existing = Repository.objects.filter(owner=author).filter(name=name)
         if existing.exists():
             r = existing.get()
-            if r.fresh:
-                return redirect("repo_detail", pk=r.pk)
-            else:
-                return redirect("repo_list")
+            if not r.accessible_by.filter(pk=request.user.pk).exists():
+                r.accessible_by.add(request.user)
+                r.save()
+            return redirect("repo_list")
 
-        gh = github.GitHub(username=settings.GITHUB_USERNAME,
-                           password=settings.GITHUB_PASSWORD)
+        token = request.user.social_auth.filter(provider='github').first().extra_data['access_token']
+        gh = github.GitHub(access_token=token)
 
         try:
             rid, full_name, fork, created_at = gm.get_basic_repo_info(gh, owner, name)
         except github.ApiNotFoundError:
             raise Http404("No such repo exists.")
 
-        r = Repository(repository_id=rid, owner=author, name=name, fork=str(fork))
+        r = Repository(repository_id=rid, owner=author, name=name, fork=str(fork), created_by=request.user)
+        r.save()
+        r.accessible_by.add(request.user)
         r.save()
 
-        t = threading.Thread(target=download_repo_info, args=(owner, name, r))
+        t = threading.Thread(target=download_repo_info, args=(gh, owner, name, r))
         t.start()
 
         return redirect("repo_list")
 
 
 class RepositoryDetail(DetailView):
-    queryset = Repository.objects.filter(fresh=True)
 
     @classmethod
     def load_clf(cls, datasetname):
@@ -161,6 +162,9 @@ class RepositoryDetail(DetailView):
         cls.pipeline.fit(x, y)
         joblib.dump(cls.pipeline, modelname)
 
+    def get_queryset(self):
+        return self.request.user.access.filter(fresh=True)
+
     def get_context_data(self, **kwargs):
         context = super(RepositoryDetail, self).get_context_data(**kwargs)
         pred_str = context['repository'].prediction_string
@@ -170,22 +174,35 @@ class RepositoryDetail(DetailView):
         context['prediction'] = self.pipeline.predict(x)[0]
         return context
 
+    @method_decorator(login_required(login_url='/'))
+    def dispatch(self, *args, **kwargs):
+        return super(RepositoryDetail, self).dispatch(*args, **kwargs)
+
 
 class RepositoryListView(ListView):
-    model = Repository
+
+    @method_decorator(login_required(login_url='/'))
+    def dispatch(self, *args, **kwargs):
+        return super(RepositoryListView, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        return self.request.user.access.all()
 
 
+@login_required(login_url='/')
 def status_json(request):
     values = []
-    repos = Repository.objects.all()
+    repos = request.user.access.all()
     for repo in repos:
         values.append({"name": repo.full_name, "status": repo.fresh, "url": repo.get_absolute_url(),
                        "id": repo.id_name})
     return JsonResponse(values, safe=False)
 
 
+@login_required(login_url='/')
 def get_repo_commits(request, pk):
-    commits = CommitCount.objects.filter(repository__pk=pk)
+    repository = get_object_or_404(request.user.access, pk=pk)
+    commits = CommitCount.objects.filter(repository=repository)
     today = datetime.date.today()
     if len(commits) != 0:
         first_day = commits[0].date
@@ -218,10 +235,12 @@ def get_repo_commits(request, pk):
     return JsonResponse(commits_json, safe=False)
 
 
+@login_required(login_url='/')
 def get_repo_issues(request, pk):
-    issues = IssuesCount.objects.filter(repository__pk=pk)
-    closedissues = ClosedIssuesCount.objects.filter(repository__pk=pk)
-    closedissuestime = ClosedIssuesTime.objects.filter(repository__pk=pk)
+    repository = get_object_or_404(request.user.access, pk=pk)
+    issues = IssuesCount.objects.filter(repository=repository)
+    closedissues = ClosedIssuesCount.objects.filter(repository=repository)
+    closedissuestime = ClosedIssuesTime.objects.filter(repository=repository)
     today = datetime.date.today()
     if len(issues) != 0:
         first_day = issues[0].date
@@ -303,10 +322,12 @@ def get_repo_issues(request, pk):
     return JsonResponse(response, safe=False)
 
 
+@login_required(login_url='/')
 def get_repo_pulls(request, pk):
-    pulls = PullsCount.objects.filter(repository__pk=pk)
-    closedpulls = ClosedPullsCount.objects.filter(repository__pk=pk)
-    closedpullstime = ClosedPullsTime.objects.filter(repository__pk=pk)
+    repository = get_object_or_404(request.user.access, pk=pk)
+    pulls = PullsCount.objects.filter(repository=repository)
+    closedpulls = ClosedPullsCount.objects.filter(repository=repository)
+    closedpullstime = ClosedPullsTime.objects.filter(repository=repository)
     today = datetime.date.today()
     if len(pulls) != 0:
         first_day = pulls[0].date
@@ -388,8 +409,10 @@ def get_repo_pulls(request, pk):
     return JsonResponse(response, safe=False)
 
 
+@login_required(login_url='/')
 def get_repo_forks(request, pk):
-    forks = ForksCount.objects.filter(repository__pk=pk)
+    repository = get_object_or_404(request.user.access, pk=pk)
+    forks = ForksCount.objects.filter(repository=repository)
     today = datetime.date.today()
     if len(forks) != 0:
         first_day = forks[0].date
