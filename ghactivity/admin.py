@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Repository, CommitCount, IssuesCount, ClosedIssuesCount, ClosedIssuesTime, PullsCount, \
-    ClosedPullsCount, ClosedPullsTime, ForksCount, Author
+    ClosedPullsCount, ClosedPullsTime, ForksCount
 
 
 class CommitCountInline(admin.TabularInline):
@@ -48,9 +48,4 @@ class RepositoryAdmin(admin.ModelAdmin):
     ]
 
 
-class AuthorAdmin(admin.ModelAdmin):
-    pass
-
-
 admin.site.register(Repository, RepositoryAdmin)
-admin.site.register(Author, AuthorAdmin)

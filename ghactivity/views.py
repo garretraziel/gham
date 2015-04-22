@@ -3,7 +3,6 @@ from django.views.generic import DetailView, ListView
 from django.template.context_processors import csrf
 from django.shortcuts import redirect, get_object_or_404
 from django.http import Http404
-from django.conf import settings
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
@@ -21,7 +20,7 @@ from StringIO import StringIO
 import threading
 import datetime
 
-from .models import Repository, Author, CommitCount, IssuesCount, ClosedIssuesCount, ClosedIssuesTime, PullsCount, \
+from .models import Repository, CommitCount, IssuesCount, ClosedIssuesCount, ClosedIssuesTime, PullsCount, \
     ClosedPullsCount, ClosedPullsTime, ForksCount
 
 
@@ -109,9 +108,7 @@ def get_repo_info(request):
         full_name = request.POST['repository']
         owner, name = full_name.split("/", 1)
 
-        author, _ = Author.objects.get_or_create(name=owner)
-
-        existing = Repository.objects.filter(owner=author).filter(name=name)
+        existing = Repository.objects.filter(owner=owner, name=name)
         if existing.exists():
             r = existing.get()
             if not r.accessible_by.filter(pk=request.user.pk).exists():
@@ -127,7 +124,7 @@ def get_repo_info(request):
         except github.ApiNotFoundError:
             raise Http404("No such repo exists.")
 
-        r = Repository(repository_id=rid, owner=author, name=name, fork=str(fork), created_by=request.user)
+        r = Repository(repository_id=rid, owner=owner, name=name, fork=str(fork), created_by=request.user)
         r.save()
         r.accessible_by.add(request.user)
         r.save()

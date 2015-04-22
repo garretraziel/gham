@@ -1,5 +1,6 @@
+pandas
 Django==1.8
-ghaminer==1.0
-githubpy==1.1.0
-python-social-auth==0.2.7
-scikit-learn==0.16.0
+ghaminer
+githubpy
+python-social-auth
+scikit-learn
