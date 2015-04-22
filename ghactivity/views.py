@@ -1,5 +1,6 @@
+from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render_to_response
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, DeleteView
 from django.template.context_processors import csrf
 from django.shortcuts import redirect, get_object_or_404
 from django.http import Http404
@@ -439,3 +440,18 @@ def get_repo_forks(request, pk):
     else:
         forks_json = []
     return JsonResponse(forks_json, safe=False)
+
+
+class DeleteRepositoryView(DeleteView):
+    model = Repository
+    success_url = reverse_lazy("repo_list")
+
+    @method_decorator(login_required(login_url='/'))
+    def dispatch(self, *args, **kwargs):
+        return super(DeleteRepositoryView, self).dispatch(*args, **kwargs)
+
+    def get_object(self, queryset=None):
+        obj = super(DeleteRepositoryView, self).get_object()
+        if obj.created_by != self.request.user:
+            raise Http404
+        return obj
