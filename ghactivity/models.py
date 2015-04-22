@@ -26,7 +26,7 @@ class Repository(models.Model):
     full_name = property(_get_full_name)
 
     def _get_id_name(self):
-        return "%s_%s" % (self.owner, self.name)
+        return "%s_%s" % (self.owner.replace(".", "_"), self.name.replace(".", "_"))
     id_name = property(_get_id_name)
 
     def _get_github_url(self):

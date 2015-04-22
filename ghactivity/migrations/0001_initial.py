@@ -127,7 +127,7 @@ class Migration(migrations.Migration):
                 ('created_by', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'ordering': ['owner__name', 'name'],
+                'ordering': ['owner', 'name'],
                 'verbose_name_plural': 'repositories',
             },
         ),

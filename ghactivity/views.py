@@ -62,8 +62,8 @@ def create_average_series(values, get_date, get_value, obj, repository):
 
 
 def download_repo_info(gh, owner, name, repository):
-    commits, issues, pulls, forks, time_created, time_ended, contributors, predict = gm.get_repo_stats(gh, owner, name,
-                                                                                                       False)
+    commits, issues, pulls, forks, time_created, time_ended, contributors, predict, = gm.get_repo_stats(gh, owner, name,
+                                                                                                        False)
 
     repository.first_commit = time_created
     repository.last_commit = time_ended
@@ -116,15 +116,16 @@ def get_repo_info(request):
                 r.save()
             return redirect("repo_list")
 
-        token = request.user.social_auth.filter(provider='github').first().extra_data['access_token']  # TODO: toto nemusi existovat
+        token = request.user.social_auth.filter(provider='github').first().extra_data[
+            'access_token']  # TODO: toto nemusi existovat
         gh = github.GitHub(access_token=token)
 
         try:
-            rid, full_name, fork, created_at = gm.get_basic_repo_info(gh, owner, name)
+            rid, full_name, fork, created_at, forked_from = gm.get_basic_repo_info(gh, owner, name)
         except github.ApiNotFoundError:
             raise Http404("No such repo exists.")
 
-        r = Repository(repository_id=rid, owner=owner, name=name, fork=str(fork), created_by=request.user)
+        r = Repository(repository_id=rid, owner=owner, name=name, fork=forked_from, created_by=request.user)
         r.save()
         r.accessible_by.add(request.user)
         r.save()
@@ -136,7 +137,6 @@ def get_repo_info(request):
 
 
 class RepositoryDetail(DetailView):
-
     @classmethod
     def load_clf(cls, datasetname):
         this_dir = os.path.dirname(os.path.realpath(__file__))
@@ -177,7 +177,6 @@ class RepositoryDetail(DetailView):
 
 
 class RepositoryListView(ListView):
-
     @method_decorator(login_required(login_url='/'))
     def dispatch(self, *args, **kwargs):
         return super(RepositoryListView, self).dispatch(*args, **kwargs)
@@ -207,7 +206,7 @@ def get_repo_commits(request, pk):
         one_day_more = datetime.timedelta(days=1)
         commits_json = []
         for commit in commits:
-            while iterate_day != commit.date:
+            while iterate_day < commit.date:
                 commits_json.append({
                     "count": 0,
                     "date": iterate_day.isoformat(),
@@ -220,7 +219,7 @@ def get_repo_commits(request, pk):
                 "distance": (commit.date - first_day).days
             })
             iterate_day += one_day_more
-        while iterate_day != today:
+        while iterate_day < today:
             commits_json.append({
                 "count": 0,
                 "date": iterate_day.isoformat(),
@@ -245,7 +244,7 @@ def get_repo_issues(request, pk):
         one_day_more = datetime.timedelta(days=1)
         issues_json = []
         for issue in issues:
-            while iterate_day != issue.date:
+            while iterate_day < issue.date:
                 issues_json.append({
                     "count": 0,
                     "date": iterate_day.isoformat(),
@@ -258,7 +257,7 @@ def get_repo_issues(request, pk):
                 "distance": (issue.date - first_day).days
             })
             iterate_day += one_day_more
-        while iterate_day != today:
+        while iterate_day < today:
             issues_json.append({
                 "count": 0,
                 "date": iterate_day.isoformat(),
@@ -268,7 +267,7 @@ def get_repo_issues(request, pk):
         iterate_day = first_day
         closedissues_json = []
         for issue in closedissues:
-            while iterate_day != issue.date:
+            while iterate_day < issue.date:
                 closedissues_json.append({
                     "count": 0,
                     "date": iterate_day.isoformat(),
@@ -281,7 +280,7 @@ def get_repo_issues(request, pk):
                 "distance": (issue.date - first_day).days
             })
             iterate_day += one_day_more
-        while iterate_day != today:
+        while iterate_day < today:
             closedissues_json.append({
                 "count": 0,
                 "date": iterate_day.isoformat(),
@@ -291,7 +290,7 @@ def get_repo_issues(request, pk):
         iterate_day = first_day
         closedissuestime_json = []
         for issuetime in closedissuestime:
-            while iterate_day != issuetime.date:
+            while iterate_day < issuetime.date:
                 closedissuestime_json.append({
                     "count": 0,
                     "date": iterate_day.isoformat(),
@@ -304,7 +303,7 @@ def get_repo_issues(request, pk):
                 "distance": (issuetime.date - first_day).days
             })
             iterate_day += one_day_more
-        while iterate_day != today:
+        while iterate_day < today:
             closedissuestime_json.append({
                 "count": 0,
                 "date": iterate_day.isoformat(),
@@ -332,7 +331,7 @@ def get_repo_pulls(request, pk):
         one_day_more = datetime.timedelta(days=1)
         pulls_json = []
         for pull in pulls:
-            while iterate_day != pull.date:
+            while iterate_day < pull.date:
                 pulls_json.append({
                     "count": 0,
                     "date": iterate_day.isoformat(),
@@ -345,7 +344,7 @@ def get_repo_pulls(request, pk):
                 "distance": (pull.date - first_day).days
             })
             iterate_day += one_day_more
-        while iterate_day != today:
+        while iterate_day < today:
             pulls_json.append({
                 "count": 0,
                 "date": iterate_day.isoformat(),
@@ -355,7 +354,7 @@ def get_repo_pulls(request, pk):
         iterate_day = first_day
         closedpulls_json = []
         for pull in closedpulls:
-            while iterate_day != pull.date:
+            while iterate_day < pull.date:
                 closedpulls_json.append({
                     "count": 0,
                     "date": iterate_day.isoformat(),
@@ -368,7 +367,7 @@ def get_repo_pulls(request, pk):
                 "distance": (pull.date - first_day).days
             })
             iterate_day += one_day_more
-        while iterate_day != today:
+        while iterate_day < today:
             closedpulls_json.append({
                 "count": 0,
                 "date": iterate_day.isoformat(),
@@ -378,7 +377,7 @@ def get_repo_pulls(request, pk):
         iterate_day = first_day
         closedpullstime_json = []
         for pulltime in closedpullstime:
-            while iterate_day != pulltime.date:
+            while iterate_day < pulltime.date:
                 closedpullstime_json.append({
                     "count": 0,
                     "date": iterate_day.isoformat(),
@@ -391,7 +390,7 @@ def get_repo_pulls(request, pk):
                 "distance": (pulltime.date - first_day).days
             })
             iterate_day += one_day_more
-        while iterate_day != today:
+        while iterate_day < today:
             closedpullstime_json.append({
                 "count": 0,
                 "date": iterate_day.isoformat(),
@@ -417,7 +416,7 @@ def get_repo_forks(request, pk):
         one_day_more = datetime.timedelta(days=1)
         forks_json = []
         for forks in forks:
-            while iterate_day != forks.date:
+            while iterate_day < forks.date:
                 forks_json.append({
                     "count": 0,
                     "date": iterate_day.isoformat(),
@@ -430,7 +429,7 @@ def get_repo_forks(request, pk):
                 "distance": (forks.date - first_day).days
             })
             iterate_day += one_day_more
-        while iterate_day != today:
+        while iterate_day < today:
             forks_json.append({
                 "count": 0,
                 "date": iterate_day.isoformat(),

@@ -23,7 +23,11 @@
                     <th class="text-center">Non-anonymous contributors</th>
                 </tr>
                 <tr>
-                    <td class="text-center">{{ repository.fork }}</td>
+                    {% if repository.fork %}
+                        <td class="text-center">{{ repository.fork }}</td>
+                    {% else %}
+                        <td class="text-center">false</td>
+                    {% endif %}
                     <td class="text-center">{{ repository.first_commit }}</td>
                     <td class="text-center">{{ repository.last_commit }}</td>
                     <td class="text-center">{{ repository.contributors }}</td>
