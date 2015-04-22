@@ -4,35 +4,30 @@
 {% block body %}
     <div class="row">
         <div class="col-md-4 col-md-offset-4">
-            <ul class="list-group">
-                <li class="list-group-item">
-                    <form class="form-inline" action="{% url "get_repo_info" %}" method="POST">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label for="repository">Repository name: </label>
-                            <input type="text" class="form-control" name="repository" id="repository"
-                                   placeholder="garretraziel/gham">
-                        </div>
-                        <button type="submit" class="btn btn-default">Get Stats</button>
-                    </form>
-                </li>
+            <div class="list-group">
+                <form class="form-inline list-group-item" action="{% url "get_repo_info" %}" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="repository">Repository name: </label>
+                        <input type="text" class="form-control" name="repository" id="repository"
+                               placeholder="garretraziel/gham">
+                    </div>
+                    <button type="submit" class="btn btn-default">Get Stats</button>
+                </form>
                 {% for repository in repository_list %}
                     {% if repository.fresh %}
-                <li class="list-group-item" id="{{ repository.id_name }}">
-                  <a href="{{ repository.get_absolute_url }}">
-                    {{ repository.full_name }}
-                  </a>
-                  {% if repository.created_by == request.user %}
-                  <a class="text-right" href="#">delete</a>
-                  {% endif %}
-                </li>
+                        <a class="list-group-item" id="{{ repository.id_name }}"
+                           href="{{ repository.get_absolute_url }}">
+                            {{ repository.full_name }}
+                        </a>
                     {% else %}
-                <li class="list-group-item disabled" id="{{ repository.id_name }}">
-                  {{ repository.full_name }}
-                </li>
+                        <a class="list-group-item disabled" id="{{ repository.id_name }}"
+                           href="{{ repository.get_absolute_url }}">
+                            {{ repository.full_name }}
+                        </a>
                     {% endif %}
                 {% endfor %}
-            </ul>
+            </div>
         </div>
     </div>
 {% endblock %}
