@@ -137,6 +137,31 @@ def get_repo_info(request):
         return redirect("repo_list")
 
 
+@login_required(login_url='/')
+def update_repository(request, pk):
+    r = get_object_or_404(request.user.access, pk=pk)
+    r.fresh = False
+    r.save()
+
+    token = request.user.social_auth.filter(provider='github').first().extra_data[
+            'access_token']  # TODO: toto nemusi existovat
+    gh = github.GitHub(access_token=token)
+
+    r.commitcount_set.all().delete()
+    r.issuescount_set.all().delete()
+    r.closedissuescount_set.all().delete()
+    r.closedissuestime_set.all().delete()
+    r.pullscount_set.all().delete()
+    r.closedpullscount_set.all().delete()
+    r.closedpullstime_set.all().delete()
+    r.forkscount_set.all().delete()
+
+    t = threading.Thread(target=download_repo_info, args=(gh, r.owner, r.name, r))
+    t.start()
+
+    return redirect("repo_list")
+
+
 class RepositoryDetail(DetailView):
     @classmethod
     def load_clf(cls, datasetname):
@@ -184,6 +209,21 @@ class RepositoryListView(ListView):
 
     def get_queryset(self):
         return self.request.user.access.all()
+
+
+class DeleteRepositoryView(DeleteView):
+    model = Repository
+    success_url = reverse_lazy("repo_list")
+
+    @method_decorator(login_required(login_url='/'))
+    def dispatch(self, *args, **kwargs):
+        return super(DeleteRepositoryView, self).dispatch(*args, **kwargs)
+
+    def get_object(self, queryset=None):
+        obj = super(DeleteRepositoryView, self).get_object()
+        if obj.created_by != self.request.user:
+            raise Http404
+        return obj
 
 
 @login_required(login_url='/')
@@ -440,18 +480,3 @@ def get_repo_forks(request, pk):
     else:
         forks_json = []
     return JsonResponse(forks_json, safe=False)
-
-
-class DeleteRepositoryView(DeleteView):
-    model = Repository
-    success_url = reverse_lazy("repo_list")
-
-    @method_decorator(login_required(login_url='/'))
-    def dispatch(self, *args, **kwargs):
-        return super(DeleteRepositoryView, self).dispatch(*args, **kwargs)
-
-    def get_object(self, queryset=None):
-        obj = super(DeleteRepositoryView, self).get_object()
-        if obj.created_by != self.request.user:
-            raise Http404
-        return obj
