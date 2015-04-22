@@ -116,7 +116,7 @@ def get_repo_info(request):
                 r.save()
             return redirect("repo_list")
 
-        token = request.user.social_auth.filter(provider='github').first().extra_data['access_token']
+        token = request.user.social_auth.filter(provider='github').first().extra_data['access_token']  # TODO: toto nemusi existovat
         gh = github.GitHub(access_token=token)
 
         try:

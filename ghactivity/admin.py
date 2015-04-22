@@ -47,5 +47,8 @@ class RepositoryAdmin(admin.ModelAdmin):
         ForksCountInline
     ]
 
+    list_display = ('full_name', 'fork', 'fresh', 'obtained')
+    list_filter = ('obtained', 'first_commit', 'last_commit', 'fresh')
+
 
 admin.site.register(Repository, RepositoryAdmin)
