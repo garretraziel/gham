@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 
 {% block body %}
-<div class="row">
-  <div class="col-md-6 col-md-offset-3">
-    <p class="text-center"><a href="{% url "social:begin" "github"  %}">Login with GitHub</a></p>
-  </div>
-</div>
+    <div class="jumbotron">
+        <h1 class="text-center">GitHub Activity Mining project</h1>
+    </div>
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <p class="text-center" style="font-size: 25px;"><a href="{% url "social:begin" "github" %}">Login with GitHub</a></p>
+        </div>
+    </div>
 {% endblock %}

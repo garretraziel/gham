@@ -144,7 +144,7 @@ def update_repository(request, pk):
     r.save()
 
     token = request.user.social_auth.filter(provider='github').first().extra_data[
-            'access_token']  # TODO: toto nemusi existovat
+        'access_token']  # TODO: toto nemusi existovat
     gh = github.GitHub(access_token=token)
 
     r.commitcount_set.all().delete()
@@ -195,6 +195,7 @@ class RepositoryDetail(DetailView):
         csv = pd.read_csv(f, names=gm.ATTRS, header=None, na_values=["nan", "?"])
         x = csv.transpose().to_dict().values()
         context['prediction'] = self.pipeline.predict(x)[0]
+        context['repository_list'] = self.request.user.access.all()
         return context
 
     @method_decorator(login_required(login_url='/'))
@@ -209,6 +210,12 @@ class RepositoryListView(ListView):
 
     def get_queryset(self):
         return self.request.user.access.all()
+
+    def get_context_data(self, **kwargs):
+        context = super(RepositoryListView, self).get_context_data(**kwargs)
+        context['user'] = {"username": self.request.user.username,
+                           "repos_count": self.request.user.access.all().count()}
+        return context
 
 
 class DeleteRepositoryView(DeleteView):
