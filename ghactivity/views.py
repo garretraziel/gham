@@ -62,7 +62,7 @@ def create_average_series(values, get_date, get_value, obj, repository):
         obj.objects.bulk_create(to_create)
 
 
-def download_repo_info(gh, owner, name, repository):
+def download_repo_info(gh, owner, name, repository, refresh=False):
     commits, issues, pulls, forks, time_created, time_ended, contributors, predict, = gm.get_repo_stats(gh, owner, name,
                                                                                                         False)
 
@@ -78,6 +78,19 @@ def download_repo_info(gh, owner, name, repository):
     issues.sort(key=gm.get_direct_date)
     pulls.sort(key=gm.get_direct_date)
     forks.sort(key=gm.get_direct_date)
+
+    if refresh:
+        repository.fresh = False
+        repository.save()
+
+        repository.commitcount_set.all().delete()
+        repository.issuescount_set.all().delete()
+        repository.closedissuescount_set.all().delete()
+        repository.closedissuestime_set.all().delete()
+        repository.pullscount_set.all().delete()
+        repository.closedpullscount_set.all().delete()
+        repository.closedpullstime_set.all().delete()
+        repository.forkscount_set.all().delete()
 
     create_count_series(commits, gm.get_commit_date, CommitCount, repository)
     create_count_series(issues, gm.get_direct_date, IssuesCount, repository)
@@ -140,23 +153,12 @@ def get_repo_info(request):
 @login_required(login_url='/')
 def update_repository(request, pk):
     r = get_object_or_404(request.user.access, pk=pk)
-    r.fresh = False
-    r.save()
 
     token = request.user.social_auth.filter(provider='github').first().extra_data[
         'access_token']  # TODO: toto nemusi existovat
     gh = github.GitHub(access_token=token)
 
-    r.commitcount_set.all().delete()
-    r.issuescount_set.all().delete()
-    r.closedissuescount_set.all().delete()
-    r.closedissuestime_set.all().delete()
-    r.pullscount_set.all().delete()
-    r.closedpullscount_set.all().delete()
-    r.closedpullstime_set.all().delete()
-    r.forkscount_set.all().delete()
-
-    t = threading.Thread(target=download_repo_info, args=(gh, r.owner, r.name, r))
+    t = threading.Thread(target=download_repo_info, args=(gh, r.owner, r.name, r, True))
     t.start()
 
     return redirect("repo_list")
