@@ -107,6 +107,7 @@ def download_repo_info(gh, owner, name, repository, refresh=False):
 
     create_count_series(forks, gm.get_direct_date, ForksCount, repository)
 
+    repository.obtained = datetime.date.today()
     repository.fresh = True
     repository.save()
 
