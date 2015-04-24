@@ -18,7 +18,6 @@ class Repository(models.Model):
     prediction_string = models.TextField(validators=[
         RegexValidator(regex=r'([^,]+(,|$)){89}')
     ], default=",".join(["0"]*89))
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL)
     accessible_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="access")
 
     def _get_full_name(self):

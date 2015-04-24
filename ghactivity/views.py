@@ -3,8 +3,7 @@ from django.shortcuts import render_to_response
 from django.views.generic import DetailView, ListView, DeleteView
 from django.template.context_processors import csrf
 from django.shortcuts import redirect, get_object_or_404
-from django.http import Http404
-from django.http import JsonResponse
+from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 
@@ -139,7 +138,7 @@ def get_repo_info(request):
         except github.ApiNotFoundError:
             raise Http404("No such repo exists.")
 
-        r = Repository(repository_id=rid, owner=owner, name=name, fork=forked_from, created_by=request.user)
+        r = Repository(repository_id=rid, owner=owner, name=name, fork=forked_from)
         r.save()
         r.accessible_by.add(request.user)
         r.save()
@@ -188,7 +187,7 @@ class RepositoryDetail(DetailView):
         joblib.dump(cls.pipeline, modelname)
 
     def get_queryset(self):
-        return self.request.user.access.filter(fresh=True)
+        return self.request.user.access.all()
 
     def get_context_data(self, **kwargs):
         context = super(RepositoryDetail, self).get_context_data(**kwargs)
@@ -230,9 +229,16 @@ class DeleteRepositoryView(DeleteView):
 
     def get_object(self, queryset=None):
         obj = super(DeleteRepositoryView, self).get_object()
-        if obj.created_by != self.request.user:
-            raise Http404
-        return obj
+        if obj.accessible_by.filter(pk=self.request.user.pk).exists():
+            return obj
+        raise Http404
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.accessible_by.remove(request.user)
+        if self.object.accessible_by.count() == 0:
+            self.object.delete()
+        return HttpResponseRedirect(self.get_success_url())
 
 
 @login_required(login_url='/')

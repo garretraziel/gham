@@ -5,7 +5,7 @@ var aspect = height / width;
 var renderSingleValues = function (svg, values, color, scaling_id) {
     "use strict";
 
-    var padding = 30;
+    var padding = 40;
     var real_width = $(scaling_id).width();
     svg.attr("preserveAspectRatio", "xMidYMid")
         .attr("viewBox", "0 0 800 400")
@@ -109,7 +109,7 @@ var renderThreeValues = function (svg, scaling_id, values_a, color_a, values_b, 
     var maxDateI = 0,
         maxDateCi = 0,
         maxDateCt = 0;
-    var padding = 30;
+    var padding = 40;
 
     if (values_a.length !== 0) {
         maxDateI = values_a[values_a.length - 1].distance;
