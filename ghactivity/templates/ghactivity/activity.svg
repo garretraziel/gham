@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="137" height="20">
+<linearGradient id="b" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+</linearGradient>
+<mask id="a">
+    <rect width="137" height="20" rx="3" fill="#fff"/>
+</mask>
+<g mask="url(#a)">
+    <path fill="#555" d="M0 0h70v20H0z"/>
+    {% if prediction > 66 %}
+        <path fill="#5bc0de" d="M70 0h67v20H70z"/>
+    {% elif prediction > 33 %}
+        <path fill="#4c1" d="M70 0h67v20H70z"/>
+    {% elif prediction > 5 %}
+        <path fill="#777" d="M70 0h67v20H70z"/>
+    {% else %}
+        <path fill="#d9534f" d="M70 0h67v20H70z"/>
+    {% endif %}
+    <path fill="url(#b)" d="M0 0h137v20H0z"/>
+</g>
+<g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
+    <text x="35" y="15" fill="#010101" fill-opacity=".3">activity</text>
+    <text x="35" y="14">activity</text>
+    {% if prediction > 66 %}
+        <text x="102.5" y="15" fill="#010101" fill-opacity=".3">beginning</text>
+        <text x="102.5" y="14">beginning</text>
+    {% elif prediction > 33 %}
+        <text x="102.5" y="15" fill="#010101" fill-opacity=".3">active</text>
+        <text x="102.5" y="14">active</text>
+    {% elif prediction > 5 %}
+        <text x="102.5" y="15" fill="#010101" fill-opacity=".3">declining</text>
+        <text x="102.5" y="14">declining</text>
+    {% else %}
+        <text x="102.5" y="15" fill="#010101" fill-opacity=".3">dead</text>
+        <text x="102.5" y="14">dead</text>
+    {% endif %}
+</g>
+</svg>

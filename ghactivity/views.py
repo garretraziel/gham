@@ -1,5 +1,5 @@
-from django.core.urlresolvers import reverse_lazy
-from django.shortcuts import render_to_response
+from django.core.urlresolvers import reverse_lazy, reverse
+from django.shortcuts import render_to_response, render
 from django.views.generic import DetailView, ListView, DeleteView
 from django.template.context_processors import csrf
 from django.shortcuts import redirect, get_object_or_404
@@ -198,6 +198,9 @@ class RepositoryDetail(DetailView):
         x = csv.transpose().to_dict().values()
         context['prediction'] = self.pipeline.predict(x)[0]
         context['repository_list'] = self.request.user.access.all()
+        pk = context['repository'].pk
+        context['badge_url'] = self.request.build_absolute_uri(reverse("repo_badge", kwargs={"pk": pk}))
+        context['index_url'] = self.request.build_absolute_uri(reverse("index"))
         return context
 
     @method_decorator(login_required(login_url='/'))
@@ -496,3 +499,13 @@ def get_repo_forks(request, pk):
     else:
         forks_json = []
     return JsonResponse(forks_json, safe=False)
+
+
+def get_repo_badge(request, pk):
+    repo = get_object_or_404(Repository, pk=pk)
+    pred_str = repo.prediction_string
+    f = StringIO(pred_str)
+    csv = pd.read_csv(f, names=gm.ATTRS, header=None, na_values=["nan", "?"])
+    x = csv.transpose().to_dict().values()
+    prediction = RepositoryDetail.pipeline.predict(x)[0]
+    return render(request, "ghactivity/activity.svg", {"prediction": prediction}, content_type="image/svg+xml")
