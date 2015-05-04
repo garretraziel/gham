@@ -2,6 +2,7 @@ var width = 800;
 var height = 400;
 var aspect = height / width;
 var legend_x = 70;
+var legend2_x = width - 250;
 
 var renderSingleValues = function (svg, values, name, color, scaling_id) {
     "use strict";
@@ -270,14 +271,14 @@ var renderThreeValues = function (svg, scaling_id, values_a, color_a, name_a, va
         .text(name_b);
 
     svg.append("path")
-        .attr("d", legendFunction([{x: legend_x, y: 50}, {x: legend_x + 100, y: 50}]))
+        .attr("d", legendFunction([{x: legend2_x, y: 10}, {x: legend2_x + 100, y: 10}]))
         .attr("stroke", color_c)
         .attr("stroke-width", 2)
         .attr("fill", "none");
 
     svg.append("text")
-        .attr("x", legend_x + 110)
-        .attr("y", 55)
+        .attr("x", legend2_x + 110)
+        .attr("y", 15)
         .attr("font-family", "sans-serif")
         .attr("font-size", "15px")
         .attr("fill", "black")
@@ -317,7 +318,7 @@ $.ajax({
     "use strict";
     $("#issues_footer").append("Total issues count: " + response.issues_count + ", closed issues count: " + response.closed_count);
     var svg = d3.select("#issues_graph");
-    renderThreeValues(svg, "#igraph", response.issues, "red", "issues", response.closed_issues, "green", "closed", response.closed_time, "blue", "avg close time");
+    renderThreeValues(svg, "#igraph", response.issues, "blue", "issues", response.closed_issues, "green", "closed issues", response.closed_time, "red", "avg close time");
 });
 
 $.ajax({
@@ -326,7 +327,7 @@ $.ajax({
     "use strict";
     $("#pulls_footer").append("Total pull requests count: " + response.pulls_count + ", closed pull requests count: " + response.closed_count);
     var svg = d3.select("#pulls_graph");
-    renderThreeValues(svg, "#pgraph", response.pulls, "red", "pulls", response.closed_pulls, "green", "closed", response.closed_time, "blue", "avg close time");
+    renderThreeValues(svg, "#pgraph", response.pulls, "blue", "pull requests", response.closed_pulls, "green", "closed pull requests", response.closed_time, "red", "avg close time");
 });
 
 $.ajax({
