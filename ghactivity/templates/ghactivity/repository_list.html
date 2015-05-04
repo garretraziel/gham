@@ -8,7 +8,7 @@
     <div class="col-md-9">
         <div class="row">
             <div class="col-md-12">
-                <p style="font-size: 50px;">Hello, {{ user.username }}! You have statistics about {{ user.repos_count }} repositories.</p>
+                <p style="font-size: 50px;">Hello, {{ user.username }}! You have statistics about {{ user.repos_count }} repositor{{ user.repos_count|pluralize:"y,ies" }}.</p>
             </div>
         </div>
     </div>
