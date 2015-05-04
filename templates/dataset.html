@@ -2,7 +2,20 @@
 
 {% block menu %}
     <li><a href="{% url "index" %}">Home</a></li>
-    <li><a href="{% url "model" %}">Model</a></li>
+    <li><a href="{% url "about" %}">About GHAM</a></li>
     <li class="active"><a href="{% url "dataset" %}">Dataset</a></li>
-    <li><a href="{% url "about" %}">About</a></li>
+{% endblock %}
+
+{% block body %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="page-header">
+                <h1 class="text-center">GHAM dataset</h1>
+            </div>
+            <p>
+                Dataset for learning methods in GHAM was obtained using <a href="https://github.com/garretraziel/ghaminer">ghaminer program</a> and is
+                freely available <a href="https://raw.githubusercontent.com/garretraziel/ghaminer/master/datasets/2015-04-15-2.csv">on GitHub</a>.
+            </p>
+        </div>
+    </div>
 {% endblock %}

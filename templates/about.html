@@ -2,7 +2,48 @@
 
 {% block menu %}
     <li><a href="{% url "index" %}">Home</a></li>
-    <li><a href="{% url "model" %}">Model</a></li>
+    <li class="active"><a href="{% url "about" %}">About GHAM</a></li>
     <li><a href="{% url "dataset" %}">Dataset</a></li>
-    <li class="active"><a href="{% url "about" %}">About</a></li>
+{% endblock %}
+
+{% block body %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="page-header">
+                <h1 class="text-center">GitHub Activity Mining Project</h1>
+            </div>
+            <p>
+                GitHub Activity Mining Project tries to visualise and predict activity of GitHub projects.
+                GHAM uses <a href="http://scikit-learn.org/">scikit-learn</a> for making
+                prediction analysis. It downloads information about
+                forks, pull requests, commits, comments, issues and how they changed over time and estimates how many
+                percent of commits remain. It then convert this information
+                into four classes:
+            <p class="bg-info">You can obtain badge for your README.md for GitHub. Just see the repository detail for
+                Markdown tag.</p>
+            <ul>
+                <li>if remaining percentage is above 66 %, it shows <span
+                        class="label label-info">At the Beginning</span> tag,
+                </li>
+                <li>if remaining percentage is between 34 % and 66 %, it shows <span
+                        class="label label-success">Active</span> tag,
+                </li>
+                <li>if remaining percentage is between 6 % and 33 %, it shows <span class="label label-default">Declining</span>
+                    tag,
+                </li>
+                <li>if remaining percentage is below 6 %, it shows <span class="label label-danger">Probably Dead</span>
+                    tag.
+                </li>
+            </ul>
+            </p>
+
+            <h2 class="text-center">Machine learning model for GHAM</h2>
+            <p>
+                Used machine learning method is <a
+                    href="http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html">Gradient
+                Tree Boosting for regression</a>.
+                Based on ten-fold cross-validation, root-mean-square error, while predicting value from 0 to 100, is ~13.
+            </p>
+        </div>
+    </div>
 {% endblock %}

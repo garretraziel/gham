@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% load staticfiles %}
 
+{% block title %}
+    {{ repository.full_name }} GHAM
+{% endblock %}
+
 {% block styles %}
     <link rel="stylesheet" type="text/css" href="{% static "css/activity.css" %}">
 {% endblock %}
