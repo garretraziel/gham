@@ -260,6 +260,7 @@ def get_repo_commits(request, pk):
     repository = get_object_or_404(request.user.access, pk=pk)
     commits = CommitCount.objects.filter(repository=repository)
     today = datetime.date.today()
+    count = 0
     if len(commits) != 0:
         first_day = commits[0].date
         iterate_day = first_day
@@ -278,6 +279,7 @@ def get_repo_commits(request, pk):
                 "date": commit.date.isoformat(),
                 "distance": (commit.date - first_day).days
             })
+            count += commit.count
             iterate_day += one_day_more
         while iterate_day < today:
             commits_json.append({
@@ -288,7 +290,8 @@ def get_repo_commits(request, pk):
             iterate_day += one_day_more
     else:
         commits_json = []
-    return JsonResponse(commits_json, safe=False)
+    result = {'count': count, 'commits': commits_json}
+    return JsonResponse(result, safe=False)
 
 
 @login_required(login_url='/')
@@ -298,6 +301,8 @@ def get_repo_issues(request, pk):
     closedissues = ClosedIssuesCount.objects.filter(repository=repository)
     closedissuestime = ClosedIssuesTime.objects.filter(repository=repository)
     today = datetime.date.today()
+    issues_count = 0
+    closed_count = 0
     if len(issues) != 0:
         first_day = issues[0].date
         iterate_day = first_day
@@ -316,6 +321,7 @@ def get_repo_issues(request, pk):
                 "date": issue.date.isoformat(),
                 "distance": (issue.date - first_day).days
             })
+            issues_count += issue.count
             iterate_day += one_day_more
         while iterate_day < today:
             issues_json.append({
@@ -339,6 +345,7 @@ def get_repo_issues(request, pk):
                 "date": issue.date.isoformat(),
                 "distance": (issue.date - first_day).days
             })
+            closed_count += issue.count
             iterate_day += one_day_more
         while iterate_day < today:
             closedissues_json.append({
@@ -374,7 +381,8 @@ def get_repo_issues(request, pk):
         issues_json = []
         closedissues_json = []
         closedissuestime_json = []
-    response = {"issues": issues_json, "closed_issues": closedissues_json, "closed_time": closedissuestime_json}
+    response = {"issues": issues_json, "closed_issues": closedissues_json, "closed_time": closedissuestime_json,
+                "issues_count": issues_count, "closed_count": closed_count}
     return JsonResponse(response, safe=False)
 
 
@@ -385,6 +393,8 @@ def get_repo_pulls(request, pk):
     closedpulls = ClosedPullsCount.objects.filter(repository=repository)
     closedpullstime = ClosedPullsTime.objects.filter(repository=repository)
     today = datetime.date.today()
+    pulls_count = 0
+    closed_count = 0
     if len(pulls) != 0:
         first_day = pulls[0].date
         iterate_day = first_day
@@ -403,6 +413,7 @@ def get_repo_pulls(request, pk):
                 "date": pull.date.isoformat(),
                 "distance": (pull.date - first_day).days
             })
+            pulls_count += pull.count
             iterate_day += one_day_more
         while iterate_day < today:
             pulls_json.append({
@@ -426,6 +437,7 @@ def get_repo_pulls(request, pk):
                 "date": pull.date.isoformat(),
                 "distance": (pull.date - first_day).days
             })
+            closed_count += pull.count
             iterate_day += one_day_more
         while iterate_day < today:
             closedpulls_json.append({
@@ -461,7 +473,8 @@ def get_repo_pulls(request, pk):
         pulls_json = []
         closedpulls_json = []
         closedpullstime_json = []
-    response = {"pulls": pulls_json, "closed_pulls": closedpulls_json, "closed_time": closedpullstime_json}
+    response = {"pulls": pulls_json, "closed_pulls": closedpulls_json, "closed_time": closedpullstime_json,
+                "pulls_count": pulls_count, "closed_count": closed_count}
     return JsonResponse(response, safe=False)
 
 
@@ -470,6 +483,7 @@ def get_repo_forks(request, pk):
     repository = get_object_or_404(request.user.access, pk=pk)
     forks = ForksCount.objects.filter(repository=repository)
     today = datetime.date.today()
+    count = 0
     if len(forks) != 0:
         first_day = forks[0].date
         iterate_day = first_day
@@ -488,6 +502,7 @@ def get_repo_forks(request, pk):
                 "date": forks.date.isoformat(),
                 "distance": (forks.date - first_day).days
             })
+            count += forks.count
             iterate_day += one_day_more
         while iterate_day < today:
             forks_json.append({
@@ -498,7 +513,8 @@ def get_repo_forks(request, pk):
             iterate_day += one_day_more
     else:
         forks_json = []
-    return JsonResponse(forks_json, safe=False)
+    result = {"count": count, "forks": forks_json}
+    return JsonResponse(result, safe=False)
 
 
 def get_repo_badge(request, pk):

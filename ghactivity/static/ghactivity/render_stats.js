@@ -1,8 +1,9 @@
 var width = 800;
 var height = 400;
 var aspect = height / width;
+var legend_x = 70;
 
-var renderSingleValues = function (svg, values, color, scaling_id) {
+var renderSingleValues = function (svg, values, name, color, scaling_id) {
     "use strict";
 
     var padding = 40;
@@ -66,11 +67,34 @@ var renderSingleValues = function (svg, values, color, scaling_id) {
         })
         .interpolate("linear");
 
+    var legendFunction = d3.svg.line()
+        .x(function (d) {
+            return d.x;
+        })
+        .y(function (d) {
+            return d.y;
+        })
+        .interpolate("linear");
+
     svg.append("path")
         .attr("d", lineFunction(values))
         .attr("stroke", color)
         .attr("stroke-width", 2)
         .attr("fill", "none");
+
+    svg.append("path")
+        .attr("d", legendFunction([{x: legend_x, y: 10}, {x: legend_x + 100, y: 10}]))
+        .attr("stroke", color)
+        .attr("stroke-width", 2)
+        .attr("fill", "none");
+
+    svg.append("text")
+        .attr("x", legend_x + 110)
+        .attr("y", 15)
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "black")
+        .text(name);
 
     svg.append("g")
         .attr("class", "axis")
@@ -85,7 +109,7 @@ var renderSingleValues = function (svg, values, color, scaling_id) {
         .call(yAxis);
 };
 
-var renderThreeValues = function (svg, scaling_id, values_a, color_a, values_b, color_b, values_c, color_c) {
+var renderThreeValues = function (svg, scaling_id, values_a, color_a, name_a, values_b, color_b, name_b, values_c, color_c, name_c) {
     "use strict";
 
     var real_width = $(scaling_id).width();
@@ -190,6 +214,15 @@ var renderThreeValues = function (svg, scaling_id, values_a, color_a, values_b, 
         })
         .interpolate("linear");
 
+    var legendFunction = d3.svg.line()
+        .x(function (d) {
+            return d.x;
+        })
+        .y(function (d) {
+            return d.y;
+        })
+        .interpolate("linear");
+
     svg.append("path")
         .attr("d", lineFunction1(values_a))
         .attr("stroke", color_a)
@@ -207,6 +240,48 @@ var renderThreeValues = function (svg, scaling_id, values_a, color_a, values_b, 
         .attr("stroke", color_c)
         .attr("stroke-width", 2)
         .attr("fill", "none");
+
+    svg.append("path")
+        .attr("d", legendFunction([{x: legend_x, y: 10}, {x: legend_x + 100, y: 10}]))
+        .attr("stroke", color_a)
+        .attr("stroke-width", 2)
+        .attr("fill", "none");
+
+    svg.append("text")
+        .attr("x", legend_x + 110)
+        .attr("y", 15)
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "black")
+        .text(name_a);
+
+    svg.append("path")
+        .attr("d", legendFunction([{x: legend_x, y: 30}, {x: legend_x + 100, y: 30}]))
+        .attr("stroke", color_b)
+        .attr("stroke-width", 2)
+        .attr("fill", "none");
+
+    svg.append("text")
+        .attr("x", legend_x + 110)
+        .attr("y", 35)
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "black")
+        .text(name_b);
+
+    svg.append("path")
+        .attr("d", legendFunction([{x: legend_x, y: 50}, {x: legend_x + 100, y: 50}]))
+        .attr("stroke", color_c)
+        .attr("stroke-width", 2)
+        .attr("fill", "none");
+
+    svg.append("text")
+        .attr("x", legend_x + 110)
+        .attr("y", 55)
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "black")
+        .text(name_c);
 
     svg.append("g")
         .attr("class", "axis")
@@ -229,34 +304,38 @@ var renderThreeValues = function (svg, scaling_id, values_a, color_a, values_b, 
 
 $.ajax({
     url: window.location.pathname + "/commits"
-}).done(function (commits) {
+}).done(function (response) {
     "use strict";
+    $("#commits_footer").append("Total commits count: " + response.count);
     var svg = d3.select("#commits_graph");
-    renderSingleValues(svg, commits, "blue", "#cgraph");
+    renderSingleValues(svg, response.commits, "commits", "blue", "#cgraph");
 });
 
 $.ajax({
     url: window.location.pathname + "/issues"
 }).done(function (response) {
     "use strict";
+    $("#issues_footer").append("Total issues count: " + response.issues_count + ", closed issues count: " + response.closed_count);
     var svg = d3.select("#issues_graph");
-    renderThreeValues(svg, "#igraph", response.issues, "red", response.closed_issues, "green", response.closed_time, "blue");
+    renderThreeValues(svg, "#igraph", response.issues, "red", "issues", response.closed_issues, "green", "closed", response.closed_time, "blue", "avg close time");
 });
 
 $.ajax({
     url: window.location.pathname + "/pulls"
 }).done(function (response) {
     "use strict";
+    $("#pulls_footer").append("Total pull requests count: " + response.pulls_count + ", closed pull requests count: " + response.closed_count);
     var svg = d3.select("#pulls_graph");
-    renderThreeValues(svg, "#pgraph", response.pulls, "red", response.closed_pulls, "green", response.closed_time, "blue");
+    renderThreeValues(svg, "#pgraph", response.pulls, "red", "pulls", response.closed_pulls, "green", "closed", response.closed_time, "blue", "avg close time");
 });
 
 $.ajax({
     url: window.location.pathname + "/forks"
-}).done(function (forks) {
+}).done(function (response) {
     "use strict";
+    $("#forks_footer").append("Total forks count: " + response.count);
     var svg = d3.select("#forks_graph");
-    renderSingleValues(svg, forks, "blue", "#fgraph");
+    renderSingleValues(svg, response.forks, "forks", "blue", "#fgraph");
 });
 
 $(document).ready(function () {
