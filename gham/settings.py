@@ -76,24 +76,12 @@ WSGI_APPLICATION = 'gham.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
-if os.environ.get("PRODUCTION"):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'gham',
-            'USER': os.environ.get("POSTGRES_USER"),
-            'PASSWORD': os.environ.get("POSTGRES_PASSWORD"),
-            'HOST': '127.0.0.1',
-            'PORT': '5432',
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        }
-    }
+}
 
 
 # Internationalization
@@ -114,6 +102,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"),
+)
+STATIC_ROOT = "/var/www/ghamproject.com/static"
 
 AUTHENTICATION_BACKENDS = (
     'social.backends.github.GithubOAuth2',
@@ -126,8 +118,11 @@ TEMPLATE_CONTEXT_PROCESSORS = DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + (
 )
 
 GITHUB_URL = "https://www.github.com"
-SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GH_KEY")
-SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GH_SECRET")
 DATASET_NAME = "2015-04-15-2.csv"
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/'
 SOCIAL_AUTH_LOGIN_URL = '/'
+
+try:
+    from localsettings import *
+except ImportError:
+    pass
