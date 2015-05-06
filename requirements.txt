@@ -4,3 +4,4 @@ ghaminer
 githubpy
 python-social-auth
 scikit-learn
+psycopg2
