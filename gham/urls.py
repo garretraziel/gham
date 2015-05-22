@@ -10,6 +10,7 @@ urlpatterns = [
     url(r'^about/$', TemplateView.as_view(template_name="about.html"), name='about'),
     url(r'^dataset/$', TemplateView.as_view(template_name="dataset.html"), name='dataset'),
 
+    # main application
     url(r'^activity/', include('ghactivity.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url('', include('social.apps.django_app.urls', namespace='social')),

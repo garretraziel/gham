@@ -3,6 +3,7 @@ from django.conf import settings
 from .views import get_repo_info, status_json, RepositoryDetail, RepositoryListView, get_repo_commits, get_repo_forks, \
     get_repo_issues, get_repo_pulls, DeleteRepositoryView, update_repository, get_repo_badge
 
+# This is used for learning/loading prediction model at the beginning
 RepositoryDetail.load_clf(settings.DATASET_NAME)
 
 urlpatterns = [

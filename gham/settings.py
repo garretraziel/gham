@@ -107,6 +107,15 @@ STATICFILES_DIRS = (
 )
 STATIC_ROOT = "/var/www/ghamproject.com/static"
 
+
+# GitHub-specific settings
+
+GITHUB_URL = "https://www.github.com"
+DATASET_NAME = "2015-04-15-2.csv"
+
+
+# Authentication using python-social-auth
+
 AUTHENTICATION_BACKENDS = (
     'social.backends.github.GithubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
@@ -117,8 +126,6 @@ TEMPLATE_CONTEXT_PROCESSORS = DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + (
     'social.apps.django_app.context_processors.login_redirect'
 )
 
-GITHUB_URL = "https://www.github.com"
-DATASET_NAME = "2015-04-15-2.csv"
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/'
 SOCIAL_AUTH_LOGIN_URL = '/'
 

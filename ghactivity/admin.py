@@ -3,6 +3,7 @@ from .models import Repository, CommitCount, IssuesCount, ClosedIssuesCount, Clo
     ClosedPullsCount, ClosedPullsTime, ForksCount
 
 
+# Admins for all models except Repository will be inlines
 class CommitCountInline(admin.TabularInline):
     model = CommitCount
 

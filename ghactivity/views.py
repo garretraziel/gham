@@ -24,6 +24,7 @@ from .models import Repository, CommitCount, IssuesCount, ClosedIssuesCount, Clo
     ClosedPullsCount, ClosedPullsTime, ForksCount
 
 
+# create entries for series of events in time
 def create_count_series(values, get_date, obj, repository):
     if len(values) != 0:
         to_create = []
@@ -40,6 +41,7 @@ def create_count_series(values, get_date, obj, repository):
         obj.objects.bulk_create(to_create)
 
 
+# create entries for series of events in time, averaging values for each timestamp
 def create_average_series(values, get_date, get_value, obj, repository):
     if len(values) != 0:
         to_create = []
@@ -61,6 +63,8 @@ def create_average_series(values, get_date, get_value, obj, repository):
         obj.objects.bulk_create(to_create)
 
 
+# download all necessary information from repository for prediction
+# this is run in thread
 def download_repo_info(gh, owner, name, repository, refresh=False):
     commits, issues, pulls, forks, time_created, time_ended, contributors, predict, = gm.get_repo_stats(gh, owner, name,
                                                                                                         False)
@@ -78,6 +82,7 @@ def download_repo_info(gh, owner, name, repository, refresh=False):
     pulls.sort(key=gm.get_direct_date)
     forks.sort(key=gm.get_direct_date)
 
+    # if user is only refreshing set fresh=False before updating values in db
     if refresh:
         repository.fresh = False
         repository.save()
@@ -112,6 +117,8 @@ def download_repo_info(gh, owner, name, repository, refresh=False):
     repository.save()
 
 
+# on get - display form for entering repository name
+# on post - start downloading info about repo in another thread
 @login_required(login_url='/')
 def get_repo_info(request):
     if request.method == 'GET':
@@ -122,6 +129,7 @@ def get_repo_info(request):
         full_name = request.POST['repository']
         owner, name = full_name.split("/", 1)
 
+        # try to find this repo in database
         existing = Repository.objects.filter(owner=owner, name=name)
         if existing.exists():
             r = existing.get()
@@ -130,20 +138,23 @@ def get_repo_info(request):
                 r.save()
             return redirect("repo_list")
 
-        token = request.user.social_auth.filter(provider='github').first().extra_data[
-            'access_token']  # TODO: toto nemusi existovat
+        # get object for accessing github API
+        token = request.user.social_auth.filter(provider='github').first().extra_data['access_token']
         gh = github.GitHub(access_token=token)
 
+        # get basic info - name etc.
         try:
             rid, full_name, fork, created_at, forked_from = gm.get_basic_repo_info(gh, owner, name)
         except github.ApiNotFoundError:
             raise Http404("No such repo exists.")
 
+        # save basic info to db
         r = Repository(repository_id=rid, owner=owner, name=name, fork=forked_from)
         r.save()
         r.accessible_by.add(request.user)
         r.save()
 
+        # start thread for downloading additional info
         t = threading.Thread(target=download_repo_info, args=(gh, owner, name, r))
         t.start()
 
@@ -154,10 +165,10 @@ def get_repo_info(request):
 def update_repository(request, pk):
     r = get_object_or_404(request.user.access, pk=pk)
 
-    token = request.user.social_auth.filter(provider='github').first().extra_data[
-        'access_token']  # TODO: toto nemusi existovat
+    token = request.user.social_auth.filter(provider='github').first().extra_data['access_token']
     gh = github.GitHub(access_token=token)
 
+    # stat thread for downloading new info
     t = threading.Thread(target=download_repo_info, args=(gh, r.owner, r.name, r, True))
     t.start()
 
@@ -167,35 +178,44 @@ def update_repository(request, pk):
 class RepositoryDetail(DetailView):
     @classmethod
     def load_clf(cls, datasetname):
+        # load dataset, train model
         this_dir = os.path.dirname(os.path.realpath(__file__))
         filename = os.path.join(this_dir, "datasets/%s" % datasetname)
         modelname = os.path.join(this_dir, "models/%s.pkl" % datasetname)
-        if os.path.exists(modelname):
+        if os.path.exists(modelname):  # try to load serialized model
             cls.pipeline = joblib.load(modelname)
             return
 
+        # there is no serialized model, train new model
+        # read dataset
         csv = pd.read_csv(filename, na_values=["nan", "?"])
         x_csv = csv.iloc[:, :-1].copy()
         y_csv = csv['result'].copy()
         x = x_csv.transpose().to_dict().values()
         y = y_csv.as_matrix()
 
+        # create pipeline of vectorizer, imputer and regressor
         v = DictVectorizer(sparse=False)
         i = Imputer()
         clf = GradientBoostingRegressor()
         cls.pipeline = Pipeline([('vectorizer', v), ('imputer', i), ('regressor', clf)])
         cls.pipeline.fit(x, y)
+        # serialize into file
         joblib.dump(cls.pipeline, modelname)
 
     def get_queryset(self):
         return self.request.user.access.all()
 
     def get_context_data(self, **kwargs):
+        # get repository
         context = super(RepositoryDetail, self).get_context_data(**kwargs)
+        # get prediction string
         pred_str = context['repository'].prediction_string
+        # parse prediction string
         f = StringIO(pred_str)
         csv = pd.read_csv(f, names=gm.ATTRS, header=None, na_values=["nan", "?"])
         x = csv.transpose().to_dict().values()
+        # predict values
         context['prediction'] = self.pipeline.predict(x)[0]
         context['repository_list'] = self.request.user.access.all()
         pk = context['repository'].pk
@@ -238,13 +258,16 @@ class DeleteRepositoryView(DeleteView):
         raise Http404
 
     def delete(self, request, *args, **kwargs):
+        # unregister user from repo.accessible_by
         self.object = self.get_object()
         self.object.accessible_by.remove(request.user)
+        # if there is no other user in accessible_by, remove repo completely
         if self.object.accessible_by.count() == 0:
             self.object.delete()
         return HttpResponseRedirect(self.get_success_url())
 
 
+# AJAX: return JSON response about repos status
 @login_required(login_url='/')
 def status_json(request):
     values = []
@@ -255,12 +278,14 @@ def status_json(request):
     return JsonResponse(values, safe=False)
 
 
+# AJAX: return JSON response containing all info about commits
 @login_required(login_url='/')
 def get_repo_commits(request, pk):
     repository = get_object_or_404(request.user.access, pk=pk)
     commits = CommitCount.objects.filter(repository=repository)
     today = datetime.date.today()
     count = 0
+    # JSONify response. put count: 0 to days without commit
     if len(commits) != 0:
         first_day = commits[0].date
         iterate_day = first_day
@@ -294,6 +319,7 @@ def get_repo_commits(request, pk):
     return JsonResponse(result, safe=False)
 
 
+# AJAX: return JSON response containing all info about issues
 @login_required(login_url='/')
 def get_repo_issues(request, pk):
     repository = get_object_or_404(request.user.access, pk=pk)
@@ -303,6 +329,7 @@ def get_repo_issues(request, pk):
     today = datetime.date.today()
     issues_count = 0
     closed_count = 0
+    # JSONify response. put count: 0 to days without issue
     if len(issues) != 0:
         first_day = issues[0].date
         iterate_day = first_day
@@ -386,6 +413,7 @@ def get_repo_issues(request, pk):
     return JsonResponse(response, safe=False)
 
 
+# AJAX: return JSON response containing all info about pull requests
 @login_required(login_url='/')
 def get_repo_pulls(request, pk):
     repository = get_object_or_404(request.user.access, pk=pk)
@@ -395,6 +423,7 @@ def get_repo_pulls(request, pk):
     today = datetime.date.today()
     pulls_count = 0
     closed_count = 0
+    # JSONify response. put count: 0 to days without pull request
     if len(pulls) != 0:
         first_day = pulls[0].date
         iterate_day = first_day
@@ -478,12 +507,14 @@ def get_repo_pulls(request, pk):
     return JsonResponse(response, safe=False)
 
 
+# AJAX: return JSON response containing all info about forks
 @login_required(login_url='/')
 def get_repo_forks(request, pk):
     repository = get_object_or_404(request.user.access, pk=pk)
     forks = ForksCount.objects.filter(repository=repository)
     today = datetime.date.today()
     count = 0
+    # JSONify response. put count: 0 to days without forks
     if len(forks) != 0:
         first_day = forks[0].date
         iterate_day = first_day
@@ -517,8 +548,10 @@ def get_repo_forks(request, pk):
     return JsonResponse(result, safe=False)
 
 
+# render badge - use SVG template
 def get_repo_badge(request, pk):
     repo = get_object_or_404(Repository, pk=pk)
+    # make prediction
     pred_str = repo.prediction_string
     f = StringIO(pred_str)
     csv = pd.read_csv(f, names=gm.ATTRS, header=None, na_values=["nan", "?"])
